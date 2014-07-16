@@ -88,7 +88,7 @@
     </properties>
 
     <modules>
-        <module>build</module>
+        <module>build-maven-plugin</module>
         <module>provisioning</module>
     </modules>
 
@@ -203,7 +203,13 @@
 
             <dependency>
                 <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-build-tool</artifactId>
+                <artifactId>wildfly-build-tools</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.wildfly.build</groupId>
+                <artifactId>wildfly-build-maven-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -250,12 +256,6 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-model-builder</artifactId>
                 <version>${version.org.apache.maven.maven-core}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId> jboss-logging</artifactId>
-                <version>${version.org.jboss.logging}</version>
             </dependency>
 
             <dependency>
