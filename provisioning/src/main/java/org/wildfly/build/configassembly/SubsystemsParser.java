@@ -21,25 +21,24 @@
 */
 package org.wildfly.build.configassembly;
 
-import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import org.wildfly.build.util.BuildPropertyReplacer;
+import org.wildfly.build.util.InputStreamSource;
+import org.wildfly.build.util.PropertyResolver;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import org.wildfly.build.util.BuildPropertyReplacer;
-import org.wildfly.build.util.PropertyResolver;
+
+import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 /**
  *
@@ -48,17 +47,17 @@ import org.wildfly.build.util.PropertyResolver;
 class SubsystemsParser {
 
     static String NAMESPACE = "urn:subsystems-config:1.0";
-    private final File inputFile;
+    private final InputStreamSource inputStreamSource;
     private final BuildPropertyReplacer propertyReplacer;
     Map<String, SubsystemConfig[]> subsystemConfigs = new HashMap<String, SubsystemConfig[]>();
 
-    SubsystemsParser(final File inputFile, BuildPropertyReplacer propertyReplacer) {
-        this.inputFile = inputFile;
+    SubsystemsParser(final InputStreamSource inputStreamSource, BuildPropertyReplacer propertyReplacer) {
+        this.inputStreamSource = inputStreamSource;
         this.propertyReplacer = propertyReplacer;
     }
 
-    SubsystemsParser(final File inputFile) {
-        this(inputFile, new BuildPropertyReplacer(PropertyResolver.NO_OP));
+    SubsystemsParser(final InputStreamSource inputStreamSource) {
+        this(inputStreamSource, new BuildPropertyReplacer(PropertyResolver.NO_OP));
     }
 
 
@@ -67,8 +66,7 @@ class SubsystemsParser {
     }
 
     void parse() throws IOException, XMLStreamException {
-        InputStream in = new BufferedInputStream(new FileInputStream(inputFile));
-        try {
+        try (InputStream in = inputStreamSource.getInputStream()) {
             XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
             reader.require(START_DOCUMENT, null, null);
             boolean done = false;
@@ -88,11 +86,6 @@ class SubsystemsParser {
                 }
             }
 
-        } finally {
-            try {
-                in.close();
-            } catch (Exception ignore) {
-            }
         }
     }
 

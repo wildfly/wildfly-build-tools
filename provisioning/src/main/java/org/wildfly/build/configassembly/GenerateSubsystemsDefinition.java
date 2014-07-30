@@ -21,6 +21,11 @@
 */
 package org.wildfly.build.configassembly;
 
+import org.wildfly.build.util.xml.AttributeValue;
+import org.wildfly.build.util.xml.ElementNode;
+import org.wildfly.build.util.xml.FormattingXMLStreamWriter;
+import org.wildfly.build.util.xml.TextNode;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;

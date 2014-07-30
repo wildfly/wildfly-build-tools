@@ -21,13 +21,17 @@
 */
 package org.wildfly.build.configassembly;
 
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import org.wildfly.build.util.InputStreamSource;
+import org.wildfly.build.util.xml.AttributeValue;
+import org.wildfly.build.util.xml.ElementNode;
+import org.wildfly.build.util.xml.Node;
+import org.wildfly.build.util.xml.NodeParser;
+import org.wildfly.build.util.xml.ParsingUtils;
+import org.wildfly.build.util.xml.ProcessingInstructionNode;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -36,9 +40,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 /**
  *
@@ -47,7 +51,7 @@ import javax.xml.stream.XMLStreamReader;
 class SubsystemParser extends NodeParser {
 
     private final String socketBindingNamespace;
-    private final File inputFile;
+    private final InputStreamSource inputStreamSource;
     private final String supplementName;
     private String extensionModule;
     private Node subsystem;
@@ -57,10 +61,10 @@ class SubsystemParser extends NodeParser {
     private final Map<String, Supplement> supplementReplacements = new HashMap<String, Supplement>();
     private final Map<String, List<AttributeValue>> attributesForReplacement = new HashMap<String, List<AttributeValue>>();
 
-    SubsystemParser(String socketBindingNamespace, String supplementName, File inputFile){
+    SubsystemParser(String socketBindingNamespace, String supplementName, InputStreamSource inputStreamSource){
         this.socketBindingNamespace = socketBindingNamespace;
         this.supplementName = supplementName;
-        this.inputFile = inputFile;
+        this.inputStreamSource = inputStreamSource;
     }
 
     String getExtensionModule() {
@@ -80,8 +84,7 @@ class SubsystemParser extends NodeParser {
     }
 
     void parse() throws IOException, XMLStreamException {
-        InputStream in = new BufferedInputStream(new FileInputStream(inputFile));
-        try {
+        try (InputStream in = inputStreamSource.getInputStream()) {
             XMLInputFactory factory = XMLInputFactory.newInstance();
             factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.FALSE);
             XMLStreamReader reader = factory.createXMLStreamReader(in);
@@ -143,11 +146,6 @@ class SubsystemParser extends NodeParser {
                 }
             }
 
-        } finally {
-            try {
-                in.close();
-            } catch (Exception ignore) {
-            }
         }
     }
 

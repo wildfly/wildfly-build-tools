@@ -21,6 +21,17 @@
 */
 package org.wildfly.build.configassembly;
 
+import org.wildfly.build.util.BuildPropertyReplacer;
+import org.wildfly.build.util.InputStreamSource;
+import org.wildfly.build.util.PropertyResolver;
+import org.wildfly.build.util.xml.AttributeValue;
+import org.wildfly.build.util.xml.ElementNode;
+import org.wildfly.build.util.xml.FormattingXMLStreamWriter;
+import org.wildfly.build.util.xml.Node;
+import org.wildfly.build.util.xml.ProcessingInstructionNode;
+
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -31,10 +42,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamException;
-import org.wildfly.build.util.BuildPropertyReplacer;
-import org.wildfly.build.util.PropertyResolver;
 
 /**
  *
@@ -42,26 +49,26 @@ import org.wildfly.build.util.PropertyResolver;
  */
 public class ConfigurationAssembler {
 
-    private final File baseDir;
-    private final File templateFile;
+    private final SubsystemInputStreamSources subsystemInputStreamSources;
+    private final InputStreamSource templateInputStreamSource;
     private final String templateRootElementName;
-    private final File subsystemsFile;
+    private final InputStreamSource subsystemsInputStreamSource;
     private final File outputFile;
     private final PropertyResolver properties;
 
-    public ConfigurationAssembler(File baseDir, File templateFile, String templateRootElementName, File subsystemsFile, File outputFile, PropertyResolver properties) {
+    public ConfigurationAssembler(SubsystemInputStreamSources subsystemInputStreamSources, InputStreamSource templateInputStreamSource, String templateRootElementName, InputStreamSource subsystemsInputStreamSource, File outputFile, PropertyResolver properties) {
         this.properties = properties;
-        this.baseDir = baseDir.getAbsoluteFile();
-        this.templateFile = templateFile.getAbsoluteFile();
+        this.subsystemInputStreamSources = subsystemInputStreamSources;
+        this.templateInputStreamSource = templateInputStreamSource;
         this.templateRootElementName = templateRootElementName;
-        this.subsystemsFile = subsystemsFile.getAbsoluteFile();
+        this.subsystemsInputStreamSource = subsystemsInputStreamSource;
         this.outputFile = outputFile.getAbsoluteFile();
     }
 
     public void assemble() throws IOException, XMLStreamException {
-        TemplateParser templateParser = new TemplateParser(templateFile, templateRootElementName);
+        TemplateParser templateParser = new TemplateParser(templateInputStreamSource, templateRootElementName);
         templateParser.parse();
-        SubsystemsParser subsystemsParser = new SubsystemsParser(subsystemsFile, new BuildPropertyReplacer(properties));
+        SubsystemsParser subsystemsParser = new SubsystemsParser(subsystemsInputStreamSource, new BuildPropertyReplacer(properties));
         subsystemsParser.parse();
 
         populateTemplate(templateParser, subsystemsParser);
@@ -97,7 +104,7 @@ public class ConfigurationAssembler {
 
             final SubsystemConfig[] subsystems = subsystemsParser.getSubsystemConfigs().get(subsystemName);
             if (subsystems == null) {
-                throw new IllegalStateException("Could not find a subsystems configuration called '" + subsystemEntry.getKey() + "' in " + subsystemsFile);
+                throw new IllegalStateException("Could not find a subsystems configuration called '" + subsystemEntry.getKey() + "' in " + subsystemsInputStreamSource);
             }
             final Map<String, ElementNode> socketBindings = new TreeMap<String, ElementNode>();
             if (socketBindingsByGroup.put(groupName, socketBindings) != null) {
@@ -107,12 +114,11 @@ public class ConfigurationAssembler {
             outboundSocketBindingsByGroup.put(groupName, outboundSocketBindings);
 
             for (SubsystemConfig subsystem : subsystems) {
-                final File subsystemFile = new File(baseDir, subsystem.getSubsystem());
-                if (!subsystemFile.exists()) {
-                    throw new IllegalStateException("Could not find '" + subsystem + "' under the base directory '" + baseDir + "'");
+                final InputStreamSource inputStreamSource = subsystemInputStreamSources.getInputStreamSource(subsystem.getSubsystem());
+                if (inputStreamSource == null) {
+                    throw new IllegalStateException("Could not resolve '" + subsystem);
                 }
-
-                final SubsystemParser subsystemParser = new SubsystemParser(templateParser.getRootNode().getNamespace(), subsystem.getSupplement(), subsystemFile);
+                final SubsystemParser subsystemParser = new SubsystemParser(templateParser.getRootNode().getNamespace(), subsystem.getSupplement(), inputStreamSource);
                 subsystemParser.parse();
                 subsystemEntry.getValue().addDelegate(subsystemParser.getSubsystem());
                 extensions.add(subsystemParser.getExtensionModule());

@@ -1,6 +1,5 @@
 package org.wildfly.build.util;
 
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import org.wildfly.build.pack.model.ModuleIdentifier;
@@ -9,25 +8,10 @@ import org.wildfly.build.pack.model.ModuleIdentifier;
  * @author Stuart Douglas
  */
 public class ModuleParseResult {
-    final Path moduleRoot;
-    final Path moduleXmlFile;
     final List<ModuleDependency> dependencies = new ArrayList<ModuleDependency>();
     final List<String> resourceRoots = new ArrayList<>();
     final List<String> artifacts = new ArrayList<>();
     ModuleIdentifier identifier;
-
-    public ModuleParseResult(Path moduleRoot, Path moduleXmlFile) {
-        this.moduleRoot = moduleRoot;
-        this.moduleXmlFile = moduleXmlFile;
-    }
-
-    public Path getModuleXmlFile() {
-        return moduleXmlFile;
-    }
-
-    public Path getModuleRoot() {
-        return moduleRoot;
-    }
 
     public List<ModuleDependency> getDependencies() {
         return dependencies;

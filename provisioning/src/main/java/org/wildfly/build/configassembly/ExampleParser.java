@@ -21,20 +21,18 @@
 */
 package org.wildfly.build.configassembly;
 
-import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
-import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import org.wildfly.build.util.InputStreamSource;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import java.io.IOException;
+import java.io.InputStream;
+
+import static javax.xml.stream.XMLStreamConstants.CHARACTERS;
+import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 /**
  *
@@ -42,16 +40,15 @@ import javax.xml.stream.XMLStreamReader;
  */
 public class ExampleParser {
 
-    private final File inputFile;
+    private final InputStreamSource inputStreamSource;
     private String[] subsystems;
 
-    public ExampleParser(final File inputFile) {
-        this.inputFile = inputFile;
+    public ExampleParser(final InputStreamSource inputStreamSource) {
+        this.inputStreamSource = inputStreamSource;
     }
 
     void parse() throws IOException, XMLStreamException {
-        InputStream in = new BufferedInputStream(new FileInputStream(inputFile));
-        try {
+        try (InputStream in = inputStreamSource.getInputStream()) {
             XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
             reader.require(START_DOCUMENT, null, null);
             int type = reader.next();
@@ -65,11 +62,6 @@ public class ExampleParser {
                     }
                 }
                 type = reader.next();
-            }
-        } finally {
-            try {
-                in.close();
-            } catch (Exception ignore) {
             }
         }
     }
