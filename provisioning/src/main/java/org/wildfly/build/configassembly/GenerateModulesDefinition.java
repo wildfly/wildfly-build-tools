@@ -37,6 +37,10 @@ import javax.xml.stream.XMLStreamWriter;
 import org.jboss.logging.Logger;
 import org.wildfly.build.configassembly.ModuleParser.ModuleDependency;
 import org.wildfly.build.pack.model.ModuleIdentifier;
+import org.wildfly.build.util.FileInputStreamSource;
+import org.wildfly.build.util.xml.AttributeValue;
+import org.wildfly.build.util.xml.ElementNode;
+import org.wildfly.build.util.xml.FormattingXMLStreamWriter;
 
 /**
  * Generate module directory pattern file as used by FileSet.includes
@@ -124,12 +128,12 @@ public class GenerateModulesDefinition {
         List<ModuleIdentifier> dependencies = new ArrayList<ModuleIdentifier>();
 
         if (!inputFile.getName().equals(SKIP_SUBSYSTEMS)) {
-            SubsystemsParser parser = new SubsystemsParser(inputFile);
+            SubsystemsParser parser = new SubsystemsParser(new FileInputStreamSource(inputFile));
             parser.parse();
 
             for (SubsystemConfig config : parser.getSubsystemConfigs().get(profile)) {
                 File configFile = new File(resourcesDir + File.separator + config.getSubsystem());
-                SubsystemParser configParser = new SubsystemParser(null, config.getSupplement(), configFile);
+                SubsystemParser configParser = new SubsystemParser(null, config.getSupplement(), new FileInputStreamSource(configFile));
                 configParser.parse();
 
                 ModuleIdentifier moduleId = new ModuleIdentifier(configParser.getExtensionModule());
@@ -196,7 +200,7 @@ public class GenerateModulesDefinition {
             String modulespath = "system" + File.separator + "layers" + File.separator + "base";
             File moduleFile = new File(modulesDir + File.separator + modulespath + File.separator + path + File.separator + "module.xml");
 
-            ModuleParser moduleParser = new ModuleParser(moduleFile);
+            ModuleParser moduleParser = new ModuleParser(new FileInputStreamSource(moduleFile));
             moduleParser.parse();
 
             List<ModuleDependency> moduledeps = moduleParser.getDependencies();

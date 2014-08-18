@@ -88,8 +88,9 @@
     </properties>
 
     <modules>
-        <module>build-maven-plugin</module>
+        <module>feature-pack-build-maven-plugin</module>
         <module>provisioning</module>
+        <module>provisioning-maven-plugin</module>
     </modules>
 
     <build>
@@ -202,22 +203,29 @@
             <!-- Modules in this project -->
 
             <dependency>
-                <groupId>org.wildfly.build</groupId>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>wildfly-build-tools</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-build-maven-plugin</artifactId>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.wildfly.build</groupId>
-                <artifactId>wildfly-provisioning-tool</artifactId>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>wildfly-server-provisioning</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            
             <!-- External Dependencies -->
 
             <dependency>

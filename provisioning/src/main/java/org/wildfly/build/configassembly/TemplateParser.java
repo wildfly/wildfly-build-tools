@@ -21,19 +21,21 @@
 */
 package org.wildfly.build.configassembly;
 
-import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import org.wildfly.build.util.InputStreamSource;
+import org.wildfly.build.util.xml.ElementNode;
+import org.wildfly.build.util.xml.NodeParser;
+import org.wildfly.build.util.xml.ParsingUtils;
+import org.wildfly.build.util.xml.ProcessingInstructionNode;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
 
 /**
  *
@@ -45,15 +47,15 @@ public class TemplateParser extends NodeParser {
     private static final String EXTENSIONS_PI = "EXTENSIONS";
     private static final String SUBSYSTEMS_PI = "SUBSYSTEMS";
 
-    private final File inputFile;
+    private final InputStreamSource inputStreamSource;
     private final String rootElementName;
     private ElementNode root;
     private ProcessingInstructionNode extensionPlaceholder;
     private final Map<String, ProcessingInstructionNode> subsystemPlaceHolders = new HashMap<String, ProcessingInstructionNode>();
     private final Map<String, ProcessingInstructionNode> socketBindingsPlaceHolder = new HashMap<String, ProcessingInstructionNode>();
 
-    public TemplateParser(File inputFile, String rootElementName) {
-        this.inputFile = inputFile;
+    public TemplateParser(InputStreamSource inputStreamSource, String rootElementName) {
+        this.inputStreamSource = inputStreamSource;
         this.rootElementName = rootElementName;
 
     }
@@ -75,8 +77,7 @@ public class TemplateParser extends NodeParser {
     }
 
     void parse() throws IOException, XMLStreamException {
-        InputStream in = new BufferedInputStream(new FileInputStream(inputFile));
-        try {
+        try (InputStream in = inputStreamSource.getInputStream()) {
             XMLInputFactory factory = XMLInputFactory.newInstance();
             factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.FALSE);
             XMLStreamReader reader = factory.createXMLStreamReader(in);
@@ -85,11 +86,6 @@ public class TemplateParser extends NodeParser {
             ParsingUtils.getNextElement(reader, rootElementName, null, false);
             root = super.parseNode(reader, rootElementName);
 
-        } finally {
-            try {
-                in.close();
-            } catch (Exception ignore) {
-            }
         }
     }
 

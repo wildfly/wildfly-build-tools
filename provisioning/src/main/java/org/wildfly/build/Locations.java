@@ -6,6 +6,7 @@ package org.wildfly.build;
 public class Locations {
 
     public static final String VERSIONS_PROPERTIES = "versions.properties";
+    public static final String FEATURE_PACK_DESCRIPTION = "wildfly-feature-pack.xml";
     public static final String MODULES = "modules";
     public static final String CONTENT = "content";
     public static final String CONFIGURATION = "configuration";

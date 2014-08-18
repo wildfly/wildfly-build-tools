@@ -40,14 +40,17 @@ import org.wildfly.build.pack.model.ModuleIdentifier;
  *
  * @author Thomas.Diesler@jboss.com
  * @author Stuart Douglas
+ * @author Eduardo Martins
  * @since 06-Sep-2012
  */
 public class ModuleParser {
 
+    public static ModuleParseResult parse(Path inputFile) throws IOException, XMLStreamException {
+        return parse(new BufferedInputStream(new FileInputStream(inputFile.toFile())));
+    }
 
-    public static ModuleParseResult parse(final Path moduleRoot, Path inputFile) throws IOException, XMLStreamException {
-        ModuleParseResult result = new ModuleParseResult(moduleRoot, inputFile);
-        InputStream in = new BufferedInputStream(new FileInputStream(inputFile.toFile()));
+    public static ModuleParseResult parse(final InputStream in) throws IOException, XMLStreamException {
+        ModuleParseResult result = new ModuleParseResult();
         try {
             XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
             reader.require(START_DOCUMENT, null, null);
@@ -70,7 +73,7 @@ public class ModuleParser {
                 }
             }
         } catch (Exception e) {
-            throw new RuntimeException("Error parsing " + inputFile, e);
+            throw new RuntimeException("Error parsing module xml", e);
         } finally {
             try {
                 in.close();

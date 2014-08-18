@@ -22,6 +22,9 @@
 package org.wildfly.build.configassembly;
 
 import java.io.File;
+
+import org.wildfly.build.util.BaseDirSubsystemInputStreamSources;
+import org.wildfly.build.util.FileInputStreamSource;
 import org.wildfly.build.util.PropertyResolver;
 
 /**
@@ -46,8 +49,8 @@ public class DomainMain {
         }
         File outputFile = new File(args[3]);
 
-
-        ConfigurationAssembler assembler = new ConfigurationAssembler(baseDir, templateFile, "domain", subsystemsFile, outputFile, PropertyResolver.NO_OP);
+        SubsystemInputStreamSources subsystemInputStreamSources = new BaseDirSubsystemInputStreamSources(baseDir.getAbsoluteFile());
+        ConfigurationAssembler assembler = new ConfigurationAssembler(subsystemInputStreamSources, new FileInputStreamSource(templateFile), "domain", new FileInputStreamSource(subsystemsFile), outputFile, PropertyResolver.NO_OP);
         assembler.assemble();
     }
 }
