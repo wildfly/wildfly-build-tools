@@ -18,7 +18,7 @@ public class ModuleArtifactPropertyResolver implements PropertyResolver {
     public String resolveProperty(String property) {
         Artifact artifact = artifactResolver.getArtifact(property);
         if (artifact != null) {
-            final StringBuilder sb = new StringBuilder(property).append(':').append(artifact.getVersion());
+            final StringBuilder sb = new StringBuilder(artifact.getGACE().getGroupId()).append(':').append(artifact.getGACE().getArtifactId()).append(':').append(artifact.getVersion());
             if (artifact.getGACE().getClassifier() != null) {
                 sb.append(':').append(artifact.getGACE().getClassifier());
             }
