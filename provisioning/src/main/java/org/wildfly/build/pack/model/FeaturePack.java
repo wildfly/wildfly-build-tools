@@ -78,7 +78,7 @@ public class FeaturePack {
 
     private Map<ModuleIdentifier, ModuleParseResult> modules;
 
-    private static final String MODULE_XML_ENTRY_NAME_SUFIX = File.separator + "module.xml";
+    private static final String MODULE_XML_ENTRY_NAME_SUFIX = "/module.xml";
 
     public synchronized Map<ModuleIdentifier, ModuleParseResult> getModules() {
         if (modules == null) {
