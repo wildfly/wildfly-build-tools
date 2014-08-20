@@ -26,9 +26,9 @@ import java.util.zip.ZipEntry;
  */
 public class FeaturePackFactory {
 
-    private static final String CONFIGURATION_ENTRY_NAME_PREFIX = Locations.CONFIGURATION + File.separator;
-    private static final String MODULES_ENTRY_NAME_PREFIX = Locations.MODULES + File.separator;
-    private static final String CONTENT_ENTRY_NAME_PREFIX = Locations.CONTENT + File.separator;
+    private static final String CONFIGURATION_ENTRY_NAME_PREFIX = Locations.CONFIGURATION + "/";
+    private static final String MODULES_ENTRY_NAME_PREFIX = Locations.MODULES + "/";
+    private static final String CONTENT_ENTRY_NAME_PREFIX = Locations.CONTENT + "/";
 
     public static FeaturePack createPack(final String artifactCoords, final ArtifactResolver artifactResolver, final ArtifactFileResolver artifactFileResolver) {
         return createPack(artifactCoords, artifactResolver, artifactFileResolver, new HashSet<String>());
