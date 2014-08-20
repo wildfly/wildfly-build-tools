@@ -75,8 +75,8 @@ public class ServerProvisioner {
 
     private static final Logger logger = Logger.getLogger(ServerProvisioner.class);
 
-    private static final String SUBSYSTEM_TEMPLATES_ENTRY_PREFIX = "subsystem-templates" + File.separator;
-    private static final String SUBSYSTEM_SCHEMA_ENTRY_PREFIX = "schema" + File.separator;
+    private static final String SUBSYSTEM_TEMPLATES_ENTRY_PREFIX = "subsystem-templates/";
+    private static final String SUBSYSTEM_SCHEMA_ENTRY_PREFIX = "schema/";
     private static final String SUBSYSTEM_SCHEMA_TARGET_DIRECTORY = "docs" + File.separator + "schema";
 
     private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
@@ -143,7 +143,7 @@ public class ServerProvisioner {
                 // extract the file
                 FileUtils.extractFile(jar, jarEntryName, targetFile);
                 // if file is module xml process it
-                if (jarEntryName.endsWith(File.separator+"module.xml")) {
+                if (jarEntryName.endsWith("/module.xml")) {
                     try {
                         // read module xml to string for content update
                         String moduleXmlContents = FileUtils.readFile(targetFile);

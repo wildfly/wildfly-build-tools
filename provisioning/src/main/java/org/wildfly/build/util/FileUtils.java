@@ -1,13 +1,13 @@
 package org.wildfly.build.util;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -23,7 +23,7 @@ public class FileUtils {
             targetFile.mkdir();
             return;
         }
-        try (FileOutputStream fos = new java.io.FileOutputStream(targetFile);  InputStream is = jarFile.getInputStream(entry)) {
+        try (FileOutputStream fos = new java.io.FileOutputStream(targetFile); InputStream is = jarFile.getInputStream(entry)) {
             int read;
             while ((read = is.read(data)) > 0) {  // write contents of 'is' to 'fos'
                 fos.write(data, 0, read);
@@ -33,19 +33,11 @@ public class FileUtils {
 
     public static void copyFile(final InputStream in, final File dest) throws IOException {
         dest.getParentFile().mkdirs();
-        byte[] data = new byte[10000];
-        try (final OutputStream out = new BufferedOutputStream(new FileOutputStream(dest))) {
-            int read;
-            while ((read = in.read(data)) > 0) {
-                out.write(data, 0, read);
-            }
-        }
+        Files.copy(in, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
     public static void copyFile(final File src, final File dest) throws IOException {
-        try (final InputStream in = new BufferedInputStream(new FileInputStream(src))){
-            copyFile(in, dest);
-        }
+        Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
     }
 
     public static String readFile(final File file) {
