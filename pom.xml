@@ -28,7 +28,7 @@
 
     <groupId>org.wildfly.build</groupId>
     <artifactId>wildfly-build-tools-parent</artifactId>
-    <version>1.0.0.Alpha2-SNAPSHOT</version>
+    <version>1.0.0.Alpha2</version>
 
     <name>Wildfly Build Tools</name>
     <description>Tools used for building and provisioning the Wildfly server</description>
