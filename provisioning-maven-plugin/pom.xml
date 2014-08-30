@@ -78,6 +78,11 @@
             </exclusions>
             <scope>provided</scope>
         </dependency>
+        <!-- dependencies to annotations -->
+        <dependency>
+            <groupId>org.apache.maven.plugin-tools</groupId>
+            <artifactId>maven-plugin-annotations</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.eclipse.aether</groupId>
@@ -95,11 +100,6 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.logging</groupId>
-            <artifactId> jboss-logging</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jboss</groupId>
