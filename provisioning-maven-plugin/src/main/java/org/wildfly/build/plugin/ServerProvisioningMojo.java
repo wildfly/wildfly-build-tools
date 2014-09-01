@@ -25,6 +25,11 @@ package org.wildfly.build.plugin;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -42,63 +47,55 @@ import java.util.List;
 /**
  * The maven plugin that provisions a Wildfly server from a set of feature packs.
  *
- * @goal build
- * @phase compile
- * @requiresDependencyResolution runtime
- *
  * @author Eduardo Martins
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@Mojo(name = "build", requiresDependencyResolution = ResolutionScope.RUNTIME, defaultPhase = LifecyclePhase.COMPILE)
 public class ServerProvisioningMojo extends AbstractMojo {
 
-    /**
-     * @parameter expression="${project}"
-     * @required
-     * @readonly
-     */
+    @Parameter(defaultValue = "${project}", readonly = true, required = true)
     protected MavenProject project;
 
     /**
-     * @parameter alias="config-file"
-     * @required
+     * The configuration file used for provisioning.
      */
+    @Parameter(alias = "config-file", property = "wildfly.provision.configFile")
     private String configFile;
 
     /**
-     * @parameter alias="config-dir" default-value="${basedir}"
+     * The directory the configuration file is located in.
      */
+    @Parameter(alias = "config-dir", defaultValue = "${basedir}", property = "wildfly.provision.configDir")
     private File configDir;
 
     /**
-     * @parameter alias="server-name" default-value="${project.build.finalName}"
+     * The name of the server. This is the name of the final build artifact.
      */
+    @Parameter(alias = "server-name", defaultValue = "${project.build.finalName}", property = "wildfly.provision.serverName")
     private String serverName;
 
     /**
-     * @parameter default-value="${project.build.directory}"
+     * The directory for the built artifact.
      */
+    @Parameter(defaultValue = "${project.build.directory}", property = "wildfly.provision.buildName")
     private String buildName;
 
     /**
      * The entry point to Aether, i.e. the component doing all the work.
-     *
-     * @component
      */
+    @Component
     private RepositorySystem repoSystem;
 
     /**
      * The current repository/network configuration of Maven.
-     *
-     * @parameter default-value="${repositorySystemSession}"
-     * @readonly
      */
+    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
     private RepositorySystemSession repoSession;
 
     /**
      * The project's remote repositories to use for the resolution.
-     *
-     * @parameter default-value="${project.remoteProjectRepositories}"
-     * @readonly
      */
+    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
 
     @Override
