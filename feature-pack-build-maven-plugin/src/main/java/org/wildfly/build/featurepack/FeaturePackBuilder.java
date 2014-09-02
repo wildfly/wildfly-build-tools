@@ -152,6 +152,10 @@ public class FeaturePackBuilder {
                     for (String artifactName : result.getArtifacts()) {
                         if(artifactName.startsWith("${") && artifactName.endsWith("}")) {
                             String prop = artifactName.substring(2, artifactName.length() - 1);
+                            if (prop.contains("?")) {
+                                prop = prop.substring(0, prop.indexOf('?'));
+                            }
+
                             Artifact artifact = artifactResolver.getArtifact(prop);
                             if(artifact == null) {
                                 errors.add("Could not determine version for artifact " + artifactName);

@@ -49,6 +49,7 @@ import org.wildfly.build.util.ZipFileSubsystemInputStreamSources;
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -155,11 +156,23 @@ public class ServerProvisioner {
                         ModuleParseResult result = ModuleParser.parse(targetFile.toPath());
                         // process module artifacts
                         for (String artifactName : result.getArtifacts()) {
-                            if(artifactName.startsWith("${") && artifactName.endsWith("}")) {
-                                String artifactCoords = artifactName.substring(2, artifactName.length() - 1);
+                            if (artifactName.startsWith("${") && artifactName.endsWith("}")) {
+                                String ct = artifactName.substring(2, artifactName.length() - 1);
+                                String options = null;
+                                String artifactCoords = ct;
+                                boolean jandex = false;
+                                if (ct.contains("?")) {
+                                    String[] split = ct.split("\\?");
+                                    options = split[1];
+                                    artifactCoords = split[0];
+                                    jandex = options.contains("jandex"); //todo: eventually we may need options to have a proper query string type syntax
+                                    moduleXmlContents = moduleXmlContents.replace(artifactName, "${" + artifactCoords + "}"); //todo: all these replace calls are a bit yuck, we may need proper solution if this gets more complex
+                                }
+
+
                                 Artifact artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
                                 if (artifact == null) {
-                                    throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack "+ featurePack.getFeaturePackFile());
+                                    throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + featurePack.getFeaturePackFile());
                                 }
                                 try {
                                     // process the module artifact
@@ -183,6 +196,15 @@ public class ServerProvisioner {
                                             }
                                         }
                                     }
+
+                                    if (jandex) {
+                                        String baseName = artifactFile.getName().substring(0, artifactFile.getName().lastIndexOf("."));
+                                        String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf("."));
+                                        File target = new File(targetFile.getParent(), baseName + "-jandex" + extension);
+                                        JandexIndexer.createIndex(artifactFile, new FileOutputStream(target));
+                                        moduleXmlContents = moduleXmlContents.replaceAll("(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "$1<artifact name=\"\\${" + artifactCoords + "}\" />$1<resource-root path=\"" + target.getName() + "\"/>");
+                                    }
+
                                     if (!thinServer) {
                                         // copy the artifact
                                         String artifactFileName = artifactFile.getName();

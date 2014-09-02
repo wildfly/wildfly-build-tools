@@ -17,7 +17,8 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -63,10 +64,12 @@
         <version.junit>4.11</version.junit>
 
         <version.org.apache.maven.maven-core>3.0.5</version.org.apache.maven.maven-core>
-        <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>3.2.0</version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
+        <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>3.2.0
+        </version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
         <version.org.apache.maven.plugin-tools>${version.plugin.plugin}</version.org.apache.maven.plugin-tools>
         <version.org.codehaus.plexus.plexus-utils>3.0.10</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
+        <version.org.jboss.jandex>1.2.1.Final</version.org.jboss.jandex>
         <version.org.jboss.logging>3.1.4.GA</version.org.jboss.logging>
         <version.org.jboss.logging.processor>1.2.0.Final</version.org.jboss.logging.processor>
         <version.org.jboss.logmanager>1.5.2.Final</version.org.jboss.logmanager>
@@ -215,13 +218,13 @@
                 <artifactId>wildfly-server-provisioning</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            
+
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            
+
             <!-- External Dependencies -->
 
             <dependency>
@@ -313,6 +316,12 @@
                 <scope>provided</scope>
                 <!-- Used in maven 3.0.x -->
                 <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss</groupId>
+                <artifactId>jandex</artifactId>
+                <version>${version.org.jboss.jandex}</version>
             </dependency>
 
             <dependency>
