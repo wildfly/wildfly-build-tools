@@ -32,6 +32,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="feature-packs" type="feature-packs-type" minOccurs="0" maxOccurs="1" />
+                <xs:element name="version-overrides" type="version-overrides-type" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
             <xs:attribute name="copy-module-artifacts" type="xs:boolean" use="optional" />
             <xs:attribute name="extract-schemas" type="xs:boolean" use="optional" />
@@ -40,12 +41,21 @@
 
     <xs:complexType name="feature-packs-type">
         <xs:sequence>
-            <xs:element name="artifact" type="named-type" maxOccurs="unbounded" minOccurs="0" />
+            <xs:element name="artifact" type="artifact-type" maxOccurs="unbounded" minOccurs="0" />
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="named-type">
-        <xs:attribute name="name" type="xs:string"/>
+    <xs:complexType name="version-overrides-type">
+        <xs:sequence>
+            <xs:element name="version-override" type="artifact-type" maxOccurs="unbounded" minOccurs="0" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="artifact-type">
+        <xs:attribute name="groupId" type="xs:string" use="required"/>
+        <xs:attribute name="artifactId" type="xs:string" use="required"/>
+        <xs:attribute name="classifier" type="xs:string" use="optional"/>
+        <xs:attribute name="extension" type="xs:string" use="optional"/>
+        <xs:attribute name="version" type="xs:string" use="required"/>
     </xs:complexType>
 
 </xs:schema>

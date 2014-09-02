@@ -81,13 +81,13 @@ public class ServerProvisioner {
 
     private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
 
-    public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactResolver buildArtifactResolver, ArtifactFileResolver artifactFileResolver) {
+    public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
         final ServerProvisioning serverProvisioning = new ServerProvisioning(description);
         final List<String> errors = new ArrayList<>();
         try {
             // create the feature packs
-            for (String featurePackArtifactCoords : description.getFeaturePacks()) {
-                final FeaturePack featurePack = FeaturePackFactory.createPack(featurePackArtifactCoords, buildArtifactResolver, artifactFileResolver);
+            for (Artifact featurePackArtifactCoords : description.getFeaturePacks()) {
+                final FeaturePack featurePack = FeaturePackFactory.createPack(featurePackArtifactCoords, artifactFileResolver, versionOverrideArtifactResolver);
                 serverProvisioning.getFeaturePacks().add(featurePack);
             }
             // create output dir

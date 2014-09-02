@@ -30,6 +30,7 @@ import org.wildfly.build.featurepack.model.FeaturePackBuild;
 import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.pack.model.CopyArtifact;
 import org.wildfly.build.pack.model.FeaturePack;
+import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
 import org.wildfly.build.pack.model.FeaturePackDescription;
 import org.wildfly.build.pack.model.FeaturePackDescriptionXMLWriter10;
 import org.wildfly.build.pack.model.FeaturePackFactory;
@@ -50,6 +51,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -107,8 +109,9 @@ public class FeaturePackBuilder {
             if (!featurePacksProcessed.add(dependency)) {
                 continue;
             }
+            Artifact dependencyArtifact = buildArtifactResolver.getArtifact(dependency);
             // load the dependency feature pack
-            FeaturePack dependencyFeaturePack = FeaturePackFactory.createPack(dependency, buildArtifactResolver, artifactFileResolver);
+            FeaturePack dependencyFeaturePack = FeaturePackFactory.createPack(dependencyArtifact, artifactFileResolver, new FeaturePackArtifactResolver(Collections.<Artifact>emptyList()));
             // put its artifact to the version map
             artifactVersionMap.put(dependencyFeaturePack.getArtifact().getGACE(), dependencyFeaturePack.getArtifact().getVersion());
             // process it

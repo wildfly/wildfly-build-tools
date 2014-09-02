@@ -30,29 +30,24 @@ public class FeaturePackFactory {
     private static final String MODULES_ENTRY_NAME_PREFIX = Locations.MODULES + "/";
     private static final String CONTENT_ENTRY_NAME_PREFIX = Locations.CONTENT + "/";
 
-    public static FeaturePack createPack(final String artifactCoords, final ArtifactResolver artifactResolver, final ArtifactFileResolver artifactFileResolver) {
-        return createPack(artifactCoords, artifactResolver, artifactFileResolver, new HashSet<String>());
+    public static FeaturePack createPack(final Artifact artifactCoords, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver) {
+        return createPack(artifactCoords, artifactFileResolver, versionOverrideResolver, new HashSet<Artifact>());
     }
 
     /**
      *
      * @param artifactCoords the coordinates of the feature pack artifact
-     * @param artifactResolver the coordinates -> artifact resolver
      * @param artifactFileResolver the artifact -> artifact file resolver
      * @param processedFeaturePacks a set containing all parent feature packs, useful to detect cyclic dependencies
      * @return
      */
-    private static FeaturePack createPack(final String artifactCoords, final ArtifactResolver artifactResolver, final ArtifactFileResolver artifactFileResolver, Set<String> processedFeaturePacks) {
+    private static FeaturePack createPack(final Artifact artifactCoords, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver, Set<Artifact> processedFeaturePacks) {
         if (!processedFeaturePacks.add(artifactCoords)) {
             throw new IllegalStateException("Cyclic dependency, feature pack "+artifactCoords+" already processed! Feature packs: "+processedFeaturePacks);
         }
         // resolve feature pack artifact
-        final Artifact artifact = artifactResolver.getArtifact(artifactCoords);
-        if(artifact == null) {
-            throw new RuntimeException("Could not resolve artifact for feature package " + artifactCoords);
-        }
         // resolve feature pack artifact file
-        File artifactFile = artifactFileResolver.getArtifactFile(artifact);
+        File artifactFile = artifactFileResolver.getArtifactFile(artifactCoords);
         if(artifactFile == null) {
             throw new RuntimeException("Could not resolve artifact file for feature package  " + artifactCoords);
         }
@@ -77,13 +72,14 @@ public class FeaturePackFactory {
             // create description
             final FeaturePackDescription description = createFeaturePackDescription(jar);
             // create feature pack artifact resolver
-            final FeaturePackArtifactResolver featurePackArtifactResolver = new FeaturePackArtifactResolver(description, artifactResolver);
+            final FeaturePackArtifactResolver featurePackArtifactResolver = new FeaturePackArtifactResolver(description.getArtifactVersions());
+            final DelegatingArtifactResolver delegatingArtifactResolver = new DelegatingArtifactResolver(versionOverrideResolver, featurePackArtifactResolver);
             // create dependencies feature packs
             final List<FeaturePack> dependencies = new ArrayList<>();
             for (String dependency : description.getDependencies()) {
-                dependencies.add(createPack(dependency, featurePackArtifactResolver, artifactFileResolver, new HashSet<>(processedFeaturePacks)));
+                dependencies.add(createPack(delegatingArtifactResolver.getArtifact(dependency), artifactFileResolver, versionOverrideResolver, new HashSet<>(processedFeaturePacks)));
             }
-            return new FeaturePack(artifactFile, artifact, description, dependencies, featurePackArtifactResolver, configurationFiles, modulesFiles, contentFiles);
+            return new FeaturePack(artifactFile, artifactCoords, description, dependencies, delegatingArtifactResolver, configurationFiles, modulesFiles, contentFiles);
         } catch (Throwable e) {
             throw new RuntimeException("Failed to create feature pack from " + artifactCoords, e);
         }

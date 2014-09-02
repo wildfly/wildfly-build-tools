@@ -2,6 +2,7 @@ package org.wildfly.build.provisioning.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.wildfly.build.pack.model.Artifact;
 
 /**
  * Representation of the server provisioning config
@@ -10,13 +11,14 @@ import java.util.List;
  */
 public class ServerProvisioningDescription {
 
-    private final List<String> featurePacks = new ArrayList<>();
+    private final List<Artifact> featurePacks = new ArrayList<>();
+    private final List<Artifact> versionOverrides = new ArrayList<>();
 
     private boolean copyModuleArtifacts;
 
     private boolean extractSchemas;
 
-    public List<String> getFeaturePacks() {
+    public List<Artifact> getFeaturePacks() {
         return featurePacks;
     }
 
@@ -34,5 +36,9 @@ public class ServerProvisioningDescription {
 
     public void setExtractSchemas(boolean extractSchemas) {
         this.extractSchemas = extractSchemas;
+    }
+
+    public List<Artifact> getVersionOverrides() {
+        return versionOverrides;
     }
 }

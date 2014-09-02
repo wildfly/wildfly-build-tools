@@ -1,9 +1,5 @@
 package org.wildfly.build.pack.model;
 
-import org.wildfly.build.ArtifactResolver;
-import org.wildfly.build.util.ModuleParseResult;
-import org.wildfly.build.util.ModuleParser;
-
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -11,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.util.ModuleParseResult;
+import org.wildfly.build.util.ModuleParser;
 
 /**
  * Represents a Wildfly feature pack. This is used by both the build and provisioning tools,
@@ -31,9 +30,9 @@ public class FeaturePack {
     private final List<String> modulesFiles;
     private final List<String> contentFiles;
     private final List<FeaturePack> dependencies;
-    private final FeaturePackArtifactResolver artifactResolver;
+    private final ArtifactResolver artifactResolver;
 
-    public FeaturePack(File featurePackFile, Artifact featurePackArtifact, FeaturePackDescription description, List<FeaturePack> dependencies, FeaturePackArtifactResolver artifactResolver, List<String> configurationFiles, List<String> modulesFiles, List<String> contentFiles) {
+    public FeaturePack(File featurePackFile, Artifact featurePackArtifact, FeaturePackDescription description, List<FeaturePack> dependencies, ArtifactResolver artifactResolver, List<String> configurationFiles, List<String> modulesFiles, List<String> contentFiles) {
         this.featurePackFile = featurePackFile;
         this.featurePackArtifact = featurePackArtifact;
         this.description = description;

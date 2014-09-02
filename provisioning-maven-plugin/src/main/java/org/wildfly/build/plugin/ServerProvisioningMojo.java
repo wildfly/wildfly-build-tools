@@ -35,6 +35,8 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.build.AetherArtifactFileResolver;
+import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
 import org.wildfly.build.provisioning.ServerProvisioner;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionModelParser;
@@ -43,6 +45,7 @@ import org.wildfly.build.util.MapPropertyResolver;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * The maven plugin that provisions a Wildfly server from a set of feature packs.
@@ -101,8 +104,18 @@ public class ServerProvisioningMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try (FileInputStream configStream = new FileInputStream(new File(configDir, configFile))) {
-            final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(project.getProperties())).parse(configStream);
-            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), new MavenProjectArtifactResolver(project), new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos));
+
+
+            Properties properties = new Properties();
+            properties.putAll(project.getModel().getProperties());
+            properties.putAll(project.getProperties());
+            properties.putAll(System.getProperties());
+            properties.put("project.version", project.getVersion()); //TODO: figure out the correct way to do this
+
+            final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(properties)).parse(configStream);
+            AetherArtifactFileResolver aetherArtifactFileResolver = new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos);
+            ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
+            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), aetherArtifactFileResolver, overrideArtifactResolver);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

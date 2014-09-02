@@ -52,6 +52,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * The maven plugin that builds a Wildfly feature pack
@@ -113,7 +114,11 @@ public class FeaturePackBuildMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         copyContents();
         try (FileInputStream configStream = new FileInputStream(new File(configDir, configFile))) {
-            final FeaturePackBuild build = new FeaturePackBuildModelParser(new MapPropertyResolver(project.getProperties())).parse(configStream);
+            Properties properties = new Properties();
+            properties.putAll(project.getProperties());
+            properties.putAll(System.getProperties());
+            properties.put("project.version", project.getVersion()); //TODO: figure out the correct way to do this
+            final FeaturePackBuild build = new FeaturePackBuildModelParser(new MapPropertyResolver(properties)).parse(configStream);
             File target = new File(buildName, serverName);
             FeaturePackBuilder.build(build, target, new MavenProjectArtifactResolver(project), new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos));
         } catch (Exception e) {
