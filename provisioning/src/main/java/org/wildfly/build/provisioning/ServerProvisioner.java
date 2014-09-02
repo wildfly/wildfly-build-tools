@@ -93,15 +93,25 @@ public class ServerProvisioner {
             // create output dir
             FileUtils.deleteRecursive(outputDirectory);
             outputDirectory.mkdirs();
+            // create schema output dir if needed
+            final File schemaOutputDirectory;
+            if (serverProvisioning.getDescription().isExtractSchemas()) {
+                schemaOutputDirectory = new File(outputDirectory, SUBSYSTEM_SCHEMA_TARGET_DIRECTORY);
+                if (!schemaOutputDirectory.exists()) {
+                    schemaOutputDirectory.mkdirs();
+                }
+            } else {
+                schemaOutputDirectory = null;
+            }
             final Set<String> filesProcessed = new HashSet<>();
             // process modules (needs to be done for all feature packs before any config is processed)
             for (FeaturePack featurePack : serverProvisioning.getFeaturePacks()) {
-                processFeaturePackModules(featurePack, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver);
+                processFeaturePackModules(featurePack, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
             }
             // process everything else from feature pack
             for (FeaturePack featurePack : serverProvisioning.getFeaturePacks()) {
                 processConfig(featurePack, serverProvisioning, outputDirectory, filesProcessed);
-                processCopyArtifacts(featurePack, outputDirectory, filesProcessed, artifactFileResolver);
+                processCopyArtifacts(featurePack, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
                 extractFeaturePackContents(featurePack, outputDirectory, filesProcessed);
                 processFilePermissions(featurePack, outputDirectory);
             }
@@ -120,19 +130,13 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processFeaturePackModules(FeaturePack featurePack, ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver) throws IOException {
+    private static void processFeaturePackModules(FeaturePack featurePack, ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         // create the feature pack's subsystem parser factory and store it in the server builder
         ZipFileSubsystemInputStreamSources inputStreamSourceResolver = new ZipFileSubsystemInputStreamSources();
         serverProvisioning.getSubsystemInputStreamSourcesMap().put(featurePack, inputStreamSourceResolver);
         final boolean thinServer = !serverProvisioning.getDescription().isCopyModuleArtifacts();
-        final boolean extractSchemas = serverProvisioning.getDescription().isExtractSchemas();
         // create the module's artifact property replacer
         final BuildPropertyReplacer buildPropertyReplacer = thinServer ? new BuildPropertyReplacer(new ModuleArtifactPropertyResolver(featurePack.getArtifactResolver())) : null;
-        // create target dir for subsystem schemas if does not exists yet
-        final File schemaOutputDirectory = new File(outputDirectory, SUBSYSTEM_SCHEMA_TARGET_DIRECTORY);
-        if (!schemaOutputDirectory.exists()) {
-            schemaOutputDirectory.mkdirs();
-        }
         // process each module file
         try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
             for (String jarEntryName : featurePack.getModulesFiles()) {
@@ -162,7 +166,7 @@ public class ServerProvisioner {
                                     File artifactFile = artifactFileResolver.getArtifactFile(artifact);
                                     try (ZipFile zip = new ZipFile(artifactFile)) {
                                         // extract subsystem template and schema, if present
-                                        if (zip.getEntry("subsystem-templates") != null || zip.getEntry("schema") != null) {
+                                        if (zip.getEntry("subsystem-templates") != null || (schemaOutputDirectory != null && zip.getEntry("schema") != null)) {
                                             Enumeration<? extends ZipEntry> entries = zip.entries();
                                             while (entries.hasMoreElements()) {
                                                 ZipEntry entry = entries.nextElement();
@@ -170,7 +174,7 @@ public class ServerProvisioner {
                                                     String entryName = entry.getName();
                                                     if (entryName.startsWith(SUBSYSTEM_TEMPLATES_ENTRY_PREFIX)) {
                                                         inputStreamSourceResolver.addSubsystemFileSource(entryName.substring(SUBSYSTEM_TEMPLATES_ENTRY_PREFIX.length()), artifactFile, entry);
-                                                    } else if (extractSchemas && entryName.startsWith(SUBSYSTEM_SCHEMA_ENTRY_PREFIX)) {
+                                                    } else if (schemaOutputDirectory != null && entryName.startsWith(SUBSYSTEM_SCHEMA_ENTRY_PREFIX)) {
                                                         try (InputStream in = zip.getInputStream(entry)) {
                                                             FileUtils.copyFile(in, new File(schemaOutputDirectory, entryName.substring(SUBSYSTEM_SCHEMA_ENTRY_PREFIX.length())));
                                                         }
@@ -209,7 +213,7 @@ public class ServerProvisioner {
         }
         for (FeaturePack dependency : featurePack.getDependencies()) {
             // process modules of the dependency
-            processFeaturePackModules(dependency, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver);
+            processFeaturePackModules(dependency, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
             // get the dependency subsystem parser factory and merge its entries
             ZipFileSubsystemInputStreamSources dependencySubsystemParserFactory = serverProvisioning.getSubsystemInputStreamSourcesMap().get(dependency);
             inputStreamSourceResolver.addAllSubsystemFileSources(dependencySubsystemParserFactory);
@@ -253,7 +257,7 @@ public class ServerProvisioner {
                 .assemble();
     }
 
-    private static void processCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver) throws IOException {
+    private static void processCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         for (CopyArtifact copyArtifact : featurePack.getDescription().getCopyArtifacts()) {
             if (!filesProcessed.add(copyArtifact.getToLocation())) {
                 continue;
@@ -277,9 +281,30 @@ public class ServerProvisioner {
             } else {
                 FileUtils.copyFile(artifactFile, target);
             }
+
+            if (schemaOutputDirectory != null) {
+                // extract schemas, if any
+                try (ZipFile zip = new ZipFile(artifactFile)) {
+                    // extract subsystem template and schema, if present
+                    if (zip.getEntry("schema") != null) {
+                        Enumeration<? extends ZipEntry> entries = zip.entries();
+                        while (entries.hasMoreElements()) {
+                            ZipEntry entry = entries.nextElement();
+                            if (!entry.isDirectory()) {
+                                String entryName = entry.getName();
+                                if (entryName.startsWith(SUBSYSTEM_SCHEMA_ENTRY_PREFIX)) {
+                                    try (InputStream in = zip.getInputStream(entry)) {
+                                        FileUtils.copyFile(in, new File(schemaOutputDirectory, entryName.substring(SUBSYSTEM_SCHEMA_ENTRY_PREFIX.length())));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         for (FeaturePack dependency : featurePack.getDependencies()) {
-            processCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver);
+            processCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         }
     }
 
