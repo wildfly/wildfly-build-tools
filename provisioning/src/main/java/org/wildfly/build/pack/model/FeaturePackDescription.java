@@ -22,6 +22,10 @@
 
 package org.wildfly.build.pack.model;
 
+import org.wildfly.build.common.model.Config;
+import org.wildfly.build.common.model.CopyArtifact;
+import org.wildfly.build.common.model.FilePermission;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;

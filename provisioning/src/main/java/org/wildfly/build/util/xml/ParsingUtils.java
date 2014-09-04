@@ -148,4 +148,14 @@ public class ParsingUtils {
         }
         return new XMLStreamException("Missing required attributes " + b.toString(), location);
     }
+
+    public static String wildcardToJavaRegexp(String expr) {
+        if (expr == null) {
+            throw new IllegalArgumentException("expr is null");
+        }
+        String regex = expr.replaceAll("([(){}\\[\\].+^$])", "\\\\$1"); // escape regex characters
+        regex = regex.replaceAll("\\*", ".*"); // replace * with .*
+        regex = regex.replaceAll("\\?", "."); // replace ? with .
+        return regex;
+    }
 }

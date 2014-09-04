@@ -24,6 +24,10 @@ package org.wildfly.build.pack.model;
 
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.wildfly.build.common.model.ConfigModelParser10;
+import org.wildfly.build.common.model.CopyArtifactsModelParser10;
+import org.wildfly.build.common.model.FileFilterModelParser10;
+import org.wildfly.build.common.model.FilePermissionsModelParser10;
 import org.wildfly.build.util.BuildPropertyReplacer;
 import org.wildfly.build.util.PropertyResolver;
 import org.wildfly.build.util.xml.ParsingUtils;
@@ -34,7 +38,6 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,8 +51,6 @@ import java.util.Set;
  */
 class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackDescription> {
 
-    private final BuildPropertyReplacer propertyReplacer;
-
     public static final String NAMESPACE_1_0 = "urn:wildfly:feature-pack:1.0";
 
     enum Element {
@@ -61,15 +62,11 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
         DEPENDENCIES("dependencies"),
         ARTIFACT("artifact"),
         ARTIFACT_VERSIONS("artifact-versions"),
-        CONFIG("config"),
-        STANDALONE("standalone"),
-        DOMAIN("domain"),
-        PROPERTY("property"),
-        COPY_ARTIFACTS("copy-artifacts"),
-        COPY_ARTIFACT("copy-artifact"),
-        FILTER("filter"),
-        FILE_PERMISSIONS("file-permissions"),
-        PERMISSION("permission");
+        CONFIG(ConfigModelParser10.ELEMENT_LOCAL_NAME),
+        COPY_ARTIFACTS(CopyArtifactsModelParser10.ELEMENT_LOCAL_NAME),
+        FILTER(FileFilterModelParser10.ELEMENT_LOCAL_NAME),
+        FILE_PERMISSIONS(FilePermissionsModelParser10.ELEMENT_LOCAL_NAME),
+        ;
 
         private static final Map<QName, Element> elements;
 
@@ -80,14 +77,9 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
             elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT.getLocalName()), Element.ARTIFACT);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT_VERSIONS.getLocalName()), Element.ARTIFACT_VERSIONS);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.CONFIG.getLocalName()), Element.CONFIG);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.STANDALONE.getLocalName()), Element.STANDALONE);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.DOMAIN.getLocalName()), Element.DOMAIN);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.PROPERTY.getLocalName()), Element.PROPERTY);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.COPY_ARTIFACTS.getLocalName()), Element.COPY_ARTIFACTS);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.COPY_ARTIFACT.getLocalName()), Element.COPY_ARTIFACT);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.FILTER.getLocalName()), Element.FILTER);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.FILE_PERMISSIONS.getLocalName()), Element.FILE_PERMISSIONS);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.PERMISSION.getLocalName()), Element.PERMISSION);
             elements = elementsMap;
         }
 
@@ -128,15 +120,7 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
         EXTENSION("extension"),
         VERSION("version"),
         NAME("name"),
-        VALUE("value"),
-        TEMPLATE("template"),
-        SUBSYSTEMS("subsystems"),
-        OUTPUT_FILE("output-file"),
-        ARTIFACT("artifact"),
-        TO_LOCATION("to-location"),
-        EXTRACT("extract"),
-        PATTERN("pattern"),
-        INCLUDE("include");
+        ;
 
         private static final Map<QName, Attribute> attributes;
 
@@ -148,15 +132,6 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
             attributesMap.put(new QName(EXTENSION.getLocalName()), EXTENSION);
             attributesMap.put(new QName(VERSION.getLocalName()), VERSION);
             attributesMap.put(new QName(NAME.getLocalName()), NAME);
-            attributesMap.put(new QName(TEMPLATE.getLocalName()), TEMPLATE);
-            attributesMap.put(new QName(SUBSYSTEMS.getLocalName()), SUBSYSTEMS);
-            attributesMap.put(new QName(OUTPUT_FILE.getLocalName()), OUTPUT_FILE);
-            attributesMap.put(new QName(VALUE.getLocalName()), VALUE);
-            attributesMap.put(new QName(ARTIFACT.getLocalName()), ARTIFACT);
-            attributesMap.put(new QName(TO_LOCATION.getLocalName()), TO_LOCATION);
-            attributesMap.put(new QName(EXTRACT.getLocalName()), EXTRACT);
-            attributesMap.put(new QName(PATTERN.getLocalName()), PATTERN);
-            attributesMap.put(new QName(INCLUDE.getLocalName()), INCLUDE);
             attributes = attributesMap;
         }
 
@@ -181,8 +156,17 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
         }
     }
 
+    private final BuildPropertyReplacer propertyReplacer;
+    private final ConfigModelParser10 configModelParser;
+    private final CopyArtifactsModelParser10 copyArtifactsModelParser;
+    private final FilePermissionsModelParser10 filePermissionsModelParser;
+
     FeaturePackDescriptionXMLParser10(PropertyResolver resolver) {
         this.propertyReplacer = new BuildPropertyReplacer(resolver);
+        this.configModelParser = new ConfigModelParser10(this.propertyReplacer);
+        FileFilterModelParser10 fileFilterModelParser = new FileFilterModelParser10(this.propertyReplacer);
+        this.copyArtifactsModelParser = new CopyArtifactsModelParser10(this.propertyReplacer, fileFilterModelParser);
+        this.filePermissionsModelParser = new FilePermissionsModelParser10(this.propertyReplacer, fileFilterModelParser);
     }
 
     @Override
@@ -213,13 +197,13 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
                             parseArtifactVersions(reader, result);
                             break;
                         case CONFIG:
-                            parseConfig(reader, result.getConfig());
+                            configModelParser.parseConfig(reader, result.getConfig());
                             break;
                         case COPY_ARTIFACTS:
-                            parseCopyArtifacts(reader, result);
+                            copyArtifactsModelParser.parseCopyArtifacts(reader, result.getCopyArtifacts());
                             break;
                         case FILE_PERMISSIONS:
-                            parseFilePermissions(reader, result);
+                            filePermissionsModelParser.parseFilePermissions(reader, result.getFilePermissions());
                             break;
                         default:
                             throw ParsingUtils.unexpectedContent(reader);
@@ -343,291 +327,6 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
         }
         ParsingUtils.parseNoContent(reader);
         return new Artifact(groupId, artifactId, classifier, extension, version);
-    }
-
-    private void parseConfig(final XMLStreamReader reader, final Config result) throws XMLStreamException {
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case STANDALONE:
-                            parseConfigFile(reader, result.getStandaloneConfigFiles());
-                            break;
-                        case DOMAIN:
-                            parseConfigFile(reader, result.getDomainConfigFiles());
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
-    }
-
-    private void parseConfigFile(XMLStreamReader reader, List<ConfigFile> result) throws XMLStreamException {
-        final Map<String, String> properties = new HashMap<>();
-        String template = null;
-        String subsystems = null;
-        String outputFile = null;
-        final Set<Attribute> required = EnumSet.of(Attribute.TEMPLATE, Attribute.SUBSYSTEMS, Attribute.OUTPUT_FILE);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final Attribute attribute = Attribute.of(reader.getAttributeName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case TEMPLATE:
-                    template = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case SUBSYSTEMS:
-                    subsystems = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case OUTPUT_FILE:
-                    outputFile = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                default:
-                    throw ParsingUtils.unexpectedContent(reader);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw ParsingUtils.missingAttributes(reader.getLocation(), required);
-        }
-
-        final ConfigFile configFile = new ConfigFile(properties, template, subsystems, outputFile);
-        result.add(configFile);
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case PROPERTY:
-                            parseProperty(reader, properties);
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
-    }
-
-    private void parseProperty(XMLStreamReader reader, Map<String, String> result) throws XMLStreamException {
-        String name = null;
-        String value = null;
-        final Set<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.VALUE);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final Attribute attribute = Attribute.of(reader.getAttributeName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case NAME:
-                    name = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case VALUE:
-                    value = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                default:
-                    throw ParsingUtils.unexpectedContent(reader);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw ParsingUtils.missingAttributes(reader.getLocation(), required);
-        }
-        ParsingUtils.parseNoContent(reader);
-        result.put(name, value);
-    }
-
-
-    private void parseCopyArtifacts(final XMLStreamReader reader, final FeaturePackDescription result) throws XMLStreamException {
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case COPY_ARTIFACT:
-                            parseCopyArtifact(reader, result);
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
-    }
-
-    private void parseCopyArtifact(XMLStreamReader reader, FeaturePackDescription result) throws XMLStreamException {
-        String artifact = null;
-        String location = null;
-        boolean extract = false;
-        final Set<Attribute> required = EnumSet.of(Attribute.ARTIFACT, Attribute.TO_LOCATION);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final Attribute attribute = Attribute.of(reader.getAttributeName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case ARTIFACT:
-                    artifact = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case TO_LOCATION:
-                    location = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case EXTRACT:
-                    extract = Boolean.parseBoolean(propertyReplacer.replaceProperties(reader.getAttributeValue(i)));
-                    break;
-                default:
-                    throw ParsingUtils.unexpectedContent(reader);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw ParsingUtils.missingAttributes(reader.getLocation(), required);
-        }
-
-        CopyArtifact copyArtifact = new CopyArtifact(artifact, location, extract);
-        result.getCopyArtifacts().add(copyArtifact);
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case FILTER:
-                            parseFilter(reader, copyArtifact.getFilters());
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
-    }
-
-    private void parseFilter(XMLStreamReader reader, List<FileFilter> filters) throws XMLStreamException {
-        String pattern = null;
-        boolean include = false;
-        final Set<Attribute> required = EnumSet.of(Attribute.PATTERN, Attribute.INCLUDE);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final Attribute attribute = Attribute.of(reader.getAttributeName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case PATTERN:
-                    pattern = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case INCLUDE:
-                    include = Boolean.parseBoolean(propertyReplacer.replaceProperties(reader.getAttributeValue(i)));
-                    break;
-                default:
-                    throw ParsingUtils.unexpectedContent(reader);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw ParsingUtils.missingAttributes(reader.getLocation(), required);
-        }
-
-        ParsingUtils.parseNoContent(reader);
-
-        filters.add(new FileFilter(pattern, include));
-    }
-
-    private void parseFilePermissions(final XMLStreamReader reader, final FeaturePackDescription result) throws XMLStreamException {
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case PERMISSION:
-                            parsePermission(reader, result);
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
-    }
-
-    private void parsePermission(XMLStreamReader reader, FeaturePackDescription result) throws XMLStreamException {
-        String permission = null;
-        final Set<Attribute> required = EnumSet.of(Attribute.VALUE);
-        final int count = reader.getAttributeCount();
-        for (int i = 0; i < count; i++) {
-            final Attribute attribute = Attribute.of(reader.getAttributeName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case VALUE:
-                    permission = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                default:
-                    throw ParsingUtils.unexpectedContent(reader);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw ParsingUtils.missingAttributes(reader.getLocation(), required);
-        }
-
-        FilePermission filePermission = new FilePermission(permission);
-        result.getFilePermissions().add(filePermission);
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case FILTER:
-                            parseFilter(reader, filePermission.getFilters());
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
     }
 
 }

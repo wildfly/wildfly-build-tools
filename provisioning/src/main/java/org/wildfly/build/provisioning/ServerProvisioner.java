@@ -29,12 +29,12 @@ import org.wildfly.build.Locations;
 import org.wildfly.build.configassembly.ConfigurationAssembler;
 import org.wildfly.build.configassembly.SubsystemInputStreamSources;
 import org.wildfly.build.pack.model.Artifact;
-import org.wildfly.build.pack.model.Config;
-import org.wildfly.build.pack.model.ConfigFile;
-import org.wildfly.build.pack.model.CopyArtifact;
+import org.wildfly.build.common.model.Config;
+import org.wildfly.build.common.model.ConfigFile;
+import org.wildfly.build.common.model.CopyArtifact;
 import org.wildfly.build.pack.model.FeaturePack;
 import org.wildfly.build.pack.model.FeaturePackFactory;
-import org.wildfly.build.pack.model.FilePermission;
+import org.wildfly.build.common.model.FilePermission;
 import org.wildfly.build.provisioning.model.ServerProvisioning;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.util.BuildPropertyReplacer;
@@ -105,6 +105,8 @@ public class ServerProvisioner {
                 schemaOutputDirectory = null;
             }
             final Set<String> filesProcessed = new HashSet<>();
+            // process server provisioning copy-artifacts
+            processCopyArtifacts(serverProvisioning.getDescription().getCopyArtifacts(), versionOverrideArtifactResolver, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
             // process modules (needs to be done for all feature packs before any config is processed)
             for (FeaturePack featurePack : serverProvisioning.getFeaturePacks()) {
                 processFeaturePackModules(featurePack, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
@@ -112,7 +114,7 @@ public class ServerProvisioner {
             // process everything else from feature pack
             for (FeaturePack featurePack : serverProvisioning.getFeaturePacks()) {
                 processConfig(featurePack, serverProvisioning, outputDirectory, filesProcessed);
-                processCopyArtifacts(featurePack, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+                processFeaturePackCopyArtifacts(featurePack, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
                 extractFeaturePackContents(featurePack, outputDirectory, filesProcessed);
                 processFilePermissions(featurePack, outputDirectory);
             }
@@ -279,8 +281,8 @@ public class ServerProvisioner {
                 .assemble();
     }
 
-    private static void processCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
-        for (CopyArtifact copyArtifact : featurePack.getDescription().getCopyArtifacts()) {
+    private static void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+        for (CopyArtifact copyArtifact : copyArtifacts) {
             if (!filesProcessed.add(copyArtifact.getToLocation())) {
                 continue;
             }
@@ -290,7 +292,7 @@ public class ServerProvisioner {
                     throw new IOException("Could not create directory " + target.getParentFile());
                 }
             }
-            Artifact artifact = featurePack.getArtifactResolver().getArtifact(copyArtifact.getArtifact());
+            Artifact artifact = artifactResolver.getArtifact(copyArtifact.getArtifact());
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve artifact " + copyArtifact.getArtifact() + " to copy");
             }
@@ -325,8 +327,12 @@ public class ServerProvisioner {
                 }
             }
         }
+    }
+
+    private static void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+        processCopyArtifacts(featurePack.getDescription().getCopyArtifacts(), featurePack.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         for (FeaturePack dependency : featurePack.getDependencies()) {
-            processCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+            processCopyArtifacts(dependency.getDescription().getCopyArtifacts(), dependency.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         }
     }
 
