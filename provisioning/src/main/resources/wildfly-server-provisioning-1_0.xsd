@@ -33,6 +33,7 @@
             <xs:sequence>
                 <xs:element name="feature-packs" type="feature-packs-type" minOccurs="0" maxOccurs="1" />
                 <xs:element name="version-overrides" type="version-overrides-type" minOccurs="0" maxOccurs="1" />
+                <xs:element name="copy-artifacts" type="copy-artifacts-type" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
             <xs:attribute name="copy-module-artifacts" type="xs:boolean" use="optional" />
             <xs:attribute name="extract-schemas" type="xs:boolean" use="optional" />
@@ -56,6 +57,24 @@
         <xs:attribute name="classifier" type="xs:string" use="optional"/>
         <xs:attribute name="extension" type="xs:string" use="optional"/>
         <xs:attribute name="version" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="copy-artifacts-type">
+        <xs:sequence>
+            <xs:element name="copy-artifact" type="copy-artifact-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="copy-artifact-type">
+        <xs:sequence>
+            <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+        <xs:attribute name="artifact" />
+        <xs:attribute name="to-location" />
+        <xs:attribute name="extract" use="optional" default="false" />
+    </xs:complexType>
+    <xs:complexType name="filter-type">
+        <xs:attribute name="pattern" type="xs:string" use="required" />
+        <xs:attribute name="include" type="xs:boolean" use="required" />
     </xs:complexType>
 
 </xs:schema>
