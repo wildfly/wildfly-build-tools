@@ -42,7 +42,66 @@
 
     <xs:complexType name="feature-packs-type">
         <xs:sequence>
-            <xs:element name="artifact" type="artifact-type" maxOccurs="unbounded" minOccurs="0" />
+            <xs:element name="feature-pack" type="feature-pack-type" maxOccurs="unbounded" minOccurs="1" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="feature-pack-type">
+        <xs:sequence>
+            <xs:element name="artifact" type="artifact-type" />
+            <xs:element name="modules" type="feature-pack-modules-type" minOccurs="0" maxOccurs="1" />
+            <xs:element name="config" type="feature-pack-config-type" minOccurs="0" maxOccurs="1" />
+            <xs:element name="contents" type="feature-pack-contents-type" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="feature-pack-modules-type">
+        <xs:sequence>
+            <xs:element name="filter" type="feature-pack-module-filter-type" maxOccurs="unbounded" minOccurs="0" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="feature-pack-module-filter-type">
+        <xs:attribute name="pattern" type="xs:string" use="required" />
+        <xs:attribute name="include" type="xs:boolean" use="required" />
+        <xs:attribute name="transitive" type="xs:boolean" use="optional" default="true" />
+    </xs:complexType>
+
+    <xs:complexType name="feature-pack-config-type">
+        <xs:sequence>
+            <xs:element name="standalone" type="feature-pack-config-file-type" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="domain" type="feature-pack-config-file-type" minOccurs="0" maxOccurs="unbounded" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="feature-pack-config-file-type">
+        <xs:sequence>
+            <xs:element name="property" type="feature-pack-config-file-property-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="subsystems" type="feature-pack-config-file-subsystems-type" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="output-file" use="required" type="xs:string" />
+        <xs:attribute name="use-template" use="optional" type="xs:boolean" />
+    </xs:complexType>
+    <xs:complexType name="feature-pack-config-file-property-type">
+        <xs:attribute name="name" use="required" type="xs:string"/>
+        <xs:attribute name="value" use="required" type="xs:string"/>
+    </xs:complexType>
+    <xs:complexType name="feature-pack-config-file-subsystems-type">
+        <xs:sequence>
+            <xs:element name="subsystem" type="feature-pack-config-file-subsystem-type" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="name" type="xs:string" use="optional"/>
+    </xs:complexType>
+    <xs:complexType name="feature-pack-config-file-subsystem-type">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="supplement" type="xs:string" use="optional"/>
+                <xs:attribute name="include-if-set" type="xs:string" use="optional"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="feature-pack-contents-type">
+        <xs:sequence>
+            <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 

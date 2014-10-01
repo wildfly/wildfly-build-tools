@@ -3,9 +3,12 @@ package org.wildfly.build.util;
 import org.wildfly.build.configassembly.SubsystemInputStreamSources;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * @author Eduardo Martins
@@ -21,7 +24,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
      * @param zipEntry
      */
     public void addSubsystemFileSource(String subsystemFileName, File zipFile, ZipEntry zipEntry) {
-        inputStreamSourceMap.put(subsystemFileName, new ZipEntryInputStreamSource(zipFile, zipEntry));
+       inputStreamSourceMap.put(subsystemFileName, new ZipEntryInputStreamSource(zipFile, zipEntry));
     }
 
     /**
@@ -36,6 +39,24 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
         }
     }
 
+    public void addAllSubsystemFileSourcesFromZipFile(File file) throws IOException {
+        try (ZipFile zip = new ZipFile(file)) {
+            // extract subsystem template and schema, if present
+            if (zip.getEntry("subsystem-templates") != null) {
+                Enumeration<? extends ZipEntry> entries = zip.entries();
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    if (!entry.isDirectory()) {
+                        String entryName = entry.getName();
+                        if (entryName.startsWith("subsystem-templates/")) {
+                            addSubsystemFileSource(entryName.substring("subsystem-templates/".length()), file, entry);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public InputStreamSource getInputStreamSource(String subsystemFileName) {
         return inputStreamSourceMap.get(subsystemFileName);
@@ -45,4 +66,5 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
     public String toString() {
         return "zip subsystem parser factory files: "+ inputStreamSourceMap.keySet();
     }
+
 }

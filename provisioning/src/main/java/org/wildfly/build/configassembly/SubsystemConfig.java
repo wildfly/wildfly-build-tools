@@ -25,20 +25,21 @@ package org.wildfly.build.configassembly;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-class SubsystemConfig {
-    final String subsystem;
-    final String supplement;
+public class SubsystemConfig {
 
-    SubsystemConfig(String subsystem, String supplement) {
+    private final String subsystem;
+    private final String supplement;
+
+    public SubsystemConfig(String subsystem, String supplement) {
         this.subsystem = subsystem;
         this.supplement = supplement;
     }
 
-    String getSubsystem() {
+    public String getSubsystem() {
         return subsystem;
     }
 
-    String getSupplement() {
+    public String getSupplement() {
         return supplement;
     }
 

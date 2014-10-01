@@ -10,7 +10,7 @@ import org.wildfly.build.pack.model.ModuleIdentifier;
 public class ModuleParseResult {
     final List<ModuleDependency> dependencies = new ArrayList<ModuleDependency>();
     final List<String> resourceRoots = new ArrayList<>();
-    final List<String> artifacts = new ArrayList<>();
+    final List<ArtifactName> artifacts = new ArrayList<>();
     ModuleIdentifier identifier;
 
     public List<ModuleDependency> getDependencies() {
@@ -21,7 +21,7 @@ public class ModuleParseResult {
         return resourceRoots;
     }
 
-    public List<String> getArtifacts() {
+    public List<ArtifactName> getArtifacts() {
         return artifacts;
     }
 
@@ -33,7 +33,7 @@ public class ModuleParseResult {
         private final ModuleIdentifier moduleId;
         private final boolean optional;
 
-        ModuleDependency(ModuleIdentifier moduleId, boolean optional) {
+        public ModuleDependency(ModuleIdentifier moduleId, boolean optional) {
             this.moduleId = moduleId;
             this.optional = optional;
         }
@@ -49,6 +49,34 @@ public class ModuleParseResult {
         @Override
         public String toString() {
             return "[" + moduleId + (optional ? ",optional=true" : "") + "]";
+        }
+    }
+
+    public static class ArtifactName {
+
+        private final String artifactCoords;
+        private final String options;
+
+        public ArtifactName(String artifactCoords, String options) {
+            this.artifactCoords = artifactCoords;
+            this.options = options;
+        }
+
+        public String getArtifactCoords() {
+            return artifactCoords;
+        }
+
+        public String getOptions() {
+            return options;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder(artifactCoords);
+            if (options != null) {
+                sb.append('?').append(options);
+            }
+            return sb.toString();
         }
     }
 }

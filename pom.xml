@@ -184,6 +184,16 @@
                         </lifecycleMappingMetadata>
                     </configuration>
                 </plugin>
+                <plugin>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
+                    <version>${project.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
+                    <version>${project.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -224,7 +234,7 @@
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            
+
             <!-- External Dependencies -->
 
             <dependency>
