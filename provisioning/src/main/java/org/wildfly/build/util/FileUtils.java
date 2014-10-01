@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.Enumeration;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * @author Eduardo Martins
@@ -43,6 +45,26 @@ public class FileUtils {
             int read;
             while ((read = is.read(data)) > 0) {  // write contents of 'is' to 'fos'
                 fos.write(data, 0, read);
+            }
+        }
+    }
+
+    public static void extractSchemas(File file, File outputDirectory) throws IOException {
+        try (ZipFile zip = new ZipFile(file)) {
+            // schemas are in dir 'schema'
+            if (zip.getEntry("schema") != null) {
+                Enumeration<? extends ZipEntry> entries = zip.entries();
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    if (!entry.isDirectory()) {
+                        String entryName = entry.getName();
+                        if (outputDirectory != null && entryName.startsWith("schema/")) {
+                            try (InputStream in = zip.getInputStream(entry)) {
+                                FileUtils.copyFile(in, new File(outputDirectory, entryName.substring("schema/".length())));
+                            }
+                        }
+                    }
+                }
             }
         }
     }

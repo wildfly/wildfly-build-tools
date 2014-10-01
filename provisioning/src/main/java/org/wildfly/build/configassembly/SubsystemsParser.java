@@ -17,6 +17,7 @@ package org.wildfly.build.configassembly;
 
 import org.wildfly.build.util.BuildPropertyReplacer;
 import org.wildfly.build.util.InputStreamSource;
+import org.wildfly.build.util.MapPropertyResolver;
 import org.wildfly.build.util.PropertyResolver;
 
 import javax.xml.stream.XMLInputFactory;
@@ -24,9 +25,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
@@ -38,28 +37,19 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
  */
-class SubsystemsParser {
+public class SubsystemsParser {
 
     static String NAMESPACE = "urn:subsystems-config:1.0";
-    private final InputStreamSource inputStreamSource;
-    private final BuildPropertyReplacer propertyReplacer;
-    Map<String, SubsystemConfig[]> subsystemConfigs = new HashMap<String, SubsystemConfig[]>();
 
-    SubsystemsParser(final InputStreamSource inputStreamSource, BuildPropertyReplacer propertyReplacer) {
-        this.inputStreamSource = inputStreamSource;
-        this.propertyReplacer = propertyReplacer;
+    public static void parse(InputStreamSource inputStreamSource, Map<String, Map<String, SubsystemConfig>> result) throws IOException, XMLStreamException {
+        parse(inputStreamSource, new BuildPropertyReplacer(PropertyResolver.NO_OP), result);
     }
 
-    SubsystemsParser(final InputStreamSource inputStreamSource) {
-        this(inputStreamSource, new BuildPropertyReplacer(PropertyResolver.NO_OP));
+    public static void parse(InputStreamSource inputStreamSource, Map<String, String> properties, Map<String, Map<String, SubsystemConfig>> result) throws IOException, XMLStreamException {
+        parse(inputStreamSource, new BuildPropertyReplacer(new MapPropertyResolver(properties)), result);
     }
 
-
-    Map<String, SubsystemConfig[]> getSubsystemConfigs() {
-        return subsystemConfigs;
-    }
-
-    void parse() throws IOException, XMLStreamException {
+    public static void parse(InputStreamSource inputStreamSource, BuildPropertyReplacer propertyReplacer, Map<String, Map<String, SubsystemConfig>> result) throws IOException, XMLStreamException {
         try (InputStream in = inputStreamSource.getInputStream()) {
             XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
             reader.require(START_DOCUMENT, null, null);
@@ -69,7 +59,7 @@ class SubsystemsParser {
                 switch (type) {
                 case START_ELEMENT:
                     if (!done && reader.getLocalName().equals("config")) {
-                        parseSubsystems(reader);
+                        parseConfig(reader, propertyReplacer, result);
                         done = true;
                     } else {
                         throw new XMLStreamException("Invalid element " + reader.getLocalName(), reader.getLocation());
@@ -83,39 +73,43 @@ class SubsystemsParser {
         }
     }
 
-    private void parseSubsystems(XMLStreamReader reader) throws XMLStreamException {
+    public static void parseConfig(XMLStreamReader reader, BuildPropertyReplacer propertyReplacer, Map<String, Map<String, SubsystemConfig>> result) throws XMLStreamException {
         while (reader.hasNext()) {
             int type = reader.next();
             switch (type) {
-            case START_ELEMENT:
-                if (reader.getLocalName().equals("subsystems")) {
-                    String name = "";
-                    for (int i = 0 ; i < reader.getAttributeCount() ; i++) {
-                        if (!reader.getAttributeLocalName(i).equals("name")) {
-                            throw new XMLStreamException("Unknown attribute " + reader.getAttributeLocalName(i), reader.getLocation());
-                        } else {
-                            name = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                        }
+                case START_ELEMENT:
+                    if (reader.getLocalName().equals("subsystems")) {
+                        parseSubsystems(reader, propertyReplacer, result);
+                    } else {
+                        throw new XMLStreamException("Invalid element " + reader.getLocalName(), reader.getLocation());
                     }
-                    if (subsystemConfigs.containsKey(name)) {
-                        throw new XMLStreamException("Already have a subsystems named " + name, reader.getLocation());
+                    break;
+                case END_ELEMENT:
+                    if (reader.getLocalName().equals("config")) {
+                        return;
                     }
-                    List<SubsystemConfig> subsystems = new ArrayList<SubsystemConfig>();
-                    parseSubsystem(reader, subsystems);
-                    this.subsystemConfigs.put(name, subsystems.toArray(new SubsystemConfig[subsystems.size()]));
-                } else {
-                    throw new XMLStreamException("Invalid element " + reader.getLocalName(), reader.getLocation());
-                }
-                break;
-            case END_ELEMENT:
-                if (reader.getLocalName().equals("config")) {
-                    return;
-                }
             }
         }
     }
 
-    private void parseSubsystem(XMLStreamReader reader, List<SubsystemConfig> subsystems) throws XMLStreamException {
+    public static void parseSubsystems(XMLStreamReader reader, BuildPropertyReplacer propertyReplacer, Map<String, Map<String, SubsystemConfig>> result) throws XMLStreamException {
+        String name = "";
+        for (int i = 0 ; i < reader.getAttributeCount() ; i++) {
+            if (!reader.getAttributeLocalName(i).equals("name")) {
+                throw new XMLStreamException("Unknown attribute " + reader.getAttributeLocalName(i), reader.getLocation());
+            } else {
+                name = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+            }
+        }
+        if (result.containsKey(name)) {
+            throw new XMLStreamException("Already have a subsystems named " + name, reader.getLocation());
+        }
+        Map<String, SubsystemConfig> subsystems = new HashMap<>();
+        parseSubsystem(reader, propertyReplacer, subsystems);
+        result.put(name, subsystems);
+    }
+
+    private static void parseSubsystem(XMLStreamReader reader, BuildPropertyReplacer propertyReplacer, Map<String, SubsystemConfig> subsystems) throws XMLStreamException {
         reader.next();
         while (true) {
             switch (reader.getEventType()) {
@@ -140,10 +134,10 @@ class SubsystemsParser {
                         String text = reader.getElementText();
                         if (systemProperty != null) {
                             if (System.getProperty(systemProperty) != null) {
-                                subsystems.add(new SubsystemConfig(text, supplement));
+                                subsystems.put(text, new SubsystemConfig(text, supplement));
                             }
                         } else {
-                            subsystems.add(new SubsystemConfig(text, supplement));
+                            subsystems.put(text, new SubsystemConfig(text, supplement));
                         }
                     } else {
                         throw new XMLStreamException("Invalid element " + reader.getLocalName(), reader.getLocation());

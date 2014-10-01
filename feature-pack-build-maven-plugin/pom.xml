@@ -28,7 +28,7 @@
 
     <artifactId>wildfly-feature-pack-build-maven-plugin</artifactId>
 
-    <name>WildFly: Feature Pack Build Maven Plugin</name>
+    <name>WildFly Build Tools: Feature Pack Build Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
     <dependencies>

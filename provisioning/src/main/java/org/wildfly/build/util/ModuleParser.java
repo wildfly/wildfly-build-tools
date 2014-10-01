@@ -15,20 +15,21 @@
  */
 package org.wildfly.build.util;
 
-import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
+import org.wildfly.build.pack.model.ModuleIdentifier;
 
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
-import org.wildfly.build.pack.model.ModuleIdentifier;
+
+import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
+import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
+import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 /**
  *
@@ -177,12 +178,15 @@ public class ModuleParser {
                         }
                         result.resourceRoots.add(path);
                     } else if (reader.getLocalName().equals("artifact")) {
-                        String name = "";
+                        ModuleParseResult.ArtifactName name = null;
                         for (int i = 0 ; i < reader.getAttributeCount() ; i++) {
                             String localName = reader.getAttributeLocalName(i);
                             if (localName.equals("name")) {
-                                name = reader.getAttributeValue(i);
+                                name = parseArtifactName(reader.getAttributeValue(i));
                             }
+                        }
+                        if (name == null) {
+                            name = new ModuleParseResult.ArtifactName("", null);
                         }
                         result.artifacts.add(name);
                     }
@@ -192,6 +196,22 @@ public class ModuleParser {
                         return;
                     }
             }
+        }
+    }
+
+    private static ModuleParseResult.ArtifactName parseArtifactName(String artifactName) {
+        if (artifactName.startsWith("${") && artifactName.endsWith("}")) {
+            String ct = artifactName.substring(2, artifactName.length() - 1);
+            String options = null;
+            String artifactCoords = ct;
+            if (ct.contains("?")) {
+                String[] split = ct.split("\\?");
+                options = split[1];
+                artifactCoords = split[0];
+            }
+            return new ModuleParseResult.ArtifactName(artifactCoords, options);
+        } else {
+            throw new RuntimeException("Hard coded artifact " + artifactName);
         }
     }
 }

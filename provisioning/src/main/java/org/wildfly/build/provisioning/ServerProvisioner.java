@@ -20,25 +20,25 @@ import org.jboss.logging.Logger;
 import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.Locations;
-import org.wildfly.build.configassembly.ConfigurationAssembler;
-import org.wildfly.build.configassembly.SubsystemInputStreamSources;
-import org.wildfly.build.pack.model.Artifact;
-import org.wildfly.build.common.model.Config;
 import org.wildfly.build.common.model.ConfigFile;
+import org.wildfly.build.common.model.ConfigFileOverride;
 import org.wildfly.build.common.model.CopyArtifact;
+import org.wildfly.build.common.model.FileFilter;
+import org.wildfly.build.common.model.FilePermission;
+import org.wildfly.build.configassembly.ConfigurationAssembler;
+import org.wildfly.build.configassembly.SubsystemConfig;
+import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.pack.model.FeaturePack;
 import org.wildfly.build.pack.model.FeaturePackFactory;
-import org.wildfly.build.common.model.FilePermission;
+import org.wildfly.build.pack.model.ModuleIdentifier;
 import org.wildfly.build.provisioning.model.ServerProvisioning;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
+import org.wildfly.build.provisioning.model.ServerProvisioningFeaturePack;
 import org.wildfly.build.util.BuildPropertyReplacer;
 import org.wildfly.build.util.FileUtils;
-import org.wildfly.build.util.MapPropertyResolver;
 import org.wildfly.build.util.ModuleArtifactPropertyResolver;
 import org.wildfly.build.util.ModuleParseResult;
-import org.wildfly.build.util.ModuleParser;
 import org.wildfly.build.util.ZipEntryInputStreamSource;
-import org.wildfly.build.util.ZipFileSubsystemInputStreamSources;
 
 import javax.xml.stream.XMLStreamException;
 import java.io.ByteArrayInputStream;
@@ -54,8 +54,10 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
@@ -70,8 +72,6 @@ public class ServerProvisioner {
 
     private static final Logger logger = Logger.getLogger(ServerProvisioner.class);
 
-    private static final String SUBSYSTEM_TEMPLATES_ENTRY_PREFIX = "subsystem-templates/";
-    private static final String SUBSYSTEM_SCHEMA_ENTRY_PREFIX = "schema/";
     private static final String SUBSYSTEM_SCHEMA_TARGET_DIRECTORY = "docs" + File.separator + "schema";
 
     private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
@@ -81,9 +81,9 @@ public class ServerProvisioner {
         final List<String> errors = new ArrayList<>();
         try {
             // create the feature packs
-            for (Artifact featurePackArtifactCoords : description.getFeaturePacks()) {
-                final FeaturePack featurePack = FeaturePackFactory.createPack(featurePackArtifactCoords, artifactFileResolver, versionOverrideArtifactResolver);
-                serverProvisioning.getFeaturePacks().add(featurePack);
+            for (ServerProvisioningDescription.FeaturePack serverProvisioningFeaturePackDescription : description.getFeaturePacks()) {
+                final FeaturePack featurePack = FeaturePackFactory.createPack(serverProvisioningFeaturePackDescription.getArtifact(), artifactFileResolver, versionOverrideArtifactResolver);
+                serverProvisioning.getFeaturePacks().add(new ServerProvisioningFeaturePack(serverProvisioningFeaturePackDescription, featurePack, artifactFileResolver));
             }
             // create output dir
             FileUtils.deleteRecursive(outputDirectory);
@@ -101,16 +101,15 @@ public class ServerProvisioner {
             final Set<String> filesProcessed = new HashSet<>();
             // process server provisioning copy-artifacts
             processCopyArtifacts(serverProvisioning.getDescription().getCopyArtifacts(), versionOverrideArtifactResolver, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-            // process modules (needs to be done for all feature packs before any config is processed)
-            for (FeaturePack featurePack : serverProvisioning.getFeaturePacks()) {
-                processFeaturePackModules(featurePack, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-            }
-            // process everything else from feature pack
-            for (FeaturePack featurePack : serverProvisioning.getFeaturePacks()) {
-                processConfig(featurePack, serverProvisioning, outputDirectory, filesProcessed);
-                processFeaturePackCopyArtifacts(featurePack, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-                extractFeaturePackContents(featurePack, outputDirectory, filesProcessed);
-                processFilePermissions(featurePack, outputDirectory);
+            // process modules (needs to be done for all feature packs before any config is processed, due to subsystem template gathering)
+            processModules(serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+            // process the server config
+            processConfig(serverProvisioning, outputDirectory, filesProcessed);
+            // process everything else for each feature pack
+            for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
+                processFeaturePackCopyArtifacts(provisioningFeaturePack.getFeaturePack(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+                processProvisioningFeaturePackContents(provisioningFeaturePack, outputDirectory, filesProcessed);
+                processFeaturePackFilePermissions(provisioningFeaturePack.getFeaturePack(), outputDirectory);
             }
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -125,154 +124,6 @@ public class ServerProvisioner {
                 throw new RuntimeException(sb.toString());
             }
         }
-    }
-
-    private static void processFeaturePackModules(FeaturePack featurePack, ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
-        // create the feature pack's subsystem parser factory and store it in the server builder
-        ZipFileSubsystemInputStreamSources inputStreamSourceResolver = new ZipFileSubsystemInputStreamSources();
-        serverProvisioning.getSubsystemInputStreamSourcesMap().put(featurePack, inputStreamSourceResolver);
-        final boolean thinServer = !serverProvisioning.getDescription().isCopyModuleArtifacts();
-        // create the module's artifact property replacer
-        final BuildPropertyReplacer buildPropertyReplacer = thinServer ? new BuildPropertyReplacer(new ModuleArtifactPropertyResolver(featurePack.getArtifactResolver())) : null;
-        // process each module file
-        try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
-            for (String jarEntryName : featurePack.getModulesFiles()) {
-                if (!filesProcessed.add(jarEntryName)) {
-                    continue;
-                }
-                File targetFile = new File(outputDirectory, jarEntryName);
-                // extract the file
-                FileUtils.extractFile(jar, jarEntryName, targetFile);
-                // if file is module xml process it
-                if (jarEntryName.endsWith("/module.xml")) {
-                    try {
-                        // read module xml to string for content update
-                        String moduleXmlContents = FileUtils.readFile(targetFile);
-                        // parse the module xml
-                        ModuleParseResult result = ModuleParser.parse(targetFile.toPath());
-                        // process module artifacts
-                        for (String artifactName : result.getArtifacts()) {
-                            if (artifactName.startsWith("${") && artifactName.endsWith("}")) {
-                                String ct = artifactName.substring(2, artifactName.length() - 1);
-                                String options = null;
-                                String artifactCoords = ct;
-                                boolean jandex = false;
-                                if (ct.contains("?")) {
-                                    String[] split = ct.split("\\?");
-                                    options = split[1];
-                                    artifactCoords = split[0];
-                                    jandex = options.contains("jandex"); //todo: eventually we may need options to have a proper query string type syntax
-                                    moduleXmlContents = moduleXmlContents.replace(artifactName, "${" + artifactCoords + "}"); //todo: all these replace calls are a bit yuck, we may need proper solution if this gets more complex
-                                }
-
-
-                                Artifact artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
-                                if (artifact == null) {
-                                    throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + featurePack.getFeaturePackFile());
-                                }
-                                try {
-                                    // process the module artifact
-                                    File artifactFile = artifactFileResolver.getArtifactFile(artifact);
-                                    try (ZipFile zip = new ZipFile(artifactFile)) {
-                                        // extract subsystem template and schema, if present
-                                        if (zip.getEntry("subsystem-templates") != null || (schemaOutputDirectory != null && zip.getEntry("schema") != null)) {
-                                            Enumeration<? extends ZipEntry> entries = zip.entries();
-                                            while (entries.hasMoreElements()) {
-                                                ZipEntry entry = entries.nextElement();
-                                                if (!entry.isDirectory()) {
-                                                    String entryName = entry.getName();
-                                                    if (entryName.startsWith(SUBSYSTEM_TEMPLATES_ENTRY_PREFIX)) {
-                                                        inputStreamSourceResolver.addSubsystemFileSource(entryName.substring(SUBSYSTEM_TEMPLATES_ENTRY_PREFIX.length()), artifactFile, entry);
-                                                    } else if (schemaOutputDirectory != null && entryName.startsWith(SUBSYSTEM_SCHEMA_ENTRY_PREFIX)) {
-                                                        try (InputStream in = zip.getInputStream(entry)) {
-                                                            FileUtils.copyFile(in, new File(schemaOutputDirectory, entryName.substring(SUBSYSTEM_SCHEMA_ENTRY_PREFIX.length())));
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (jandex) {
-                                        String baseName = artifactFile.getName().substring(0, artifactFile.getName().lastIndexOf("."));
-                                        String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf("."));
-                                        File target = new File(targetFile.getParent(), baseName + "-jandex" + extension);
-                                        JandexIndexer.createIndex(artifactFile, new FileOutputStream(target));
-                                        moduleXmlContents = moduleXmlContents.replaceAll("(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "$1<artifact name=\"\\${" + artifactCoords + "}\" />$1<resource-root path=\"" + target.getName() + "\"/>");
-                                    }
-
-                                    if (!thinServer) {
-                                        // copy the artifact
-                                        String artifactFileName = artifactFile.getName();
-                                        FileUtils.copyFile(artifactFile, new File(targetFile.getParent(), artifactFileName));
-                                        // update module xml content
-                                        moduleXmlContents = moduleXmlContents.replaceAll("<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "<resource-root path=\"" + artifactFileName + "\"/>");
-                                    }
-                                } catch (Throwable t) {
-                                    throw new RuntimeException("Could not extract resources from " + artifactName, t);
-                                }
-                            } else {
-                                getLog().error("Hard coded artifact " + artifactName);
-                            }
-                        }
-                        if (thinServer) {
-                            // replace artifact coords properties with the ones expected by jboss-modules
-                            moduleXmlContents = buildPropertyReplacer.replaceProperties(moduleXmlContents);
-                        }
-                        // write updated module xml content
-                        FileUtils.copyFile(new ByteArrayInputStream(moduleXmlContents.getBytes("UTF-8")), targetFile);
-                    } catch (XMLStreamException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        } catch (Throwable e) {
-            throw new RuntimeException("Failed to process feature pack " + featurePack.getFeaturePackFile() + " modules", e);
-        }
-        for (FeaturePack dependency : featurePack.getDependencies()) {
-            // process modules of the dependency
-            processFeaturePackModules(dependency, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-            // get the dependency subsystem parser factory and merge its entries
-            ZipFileSubsystemInputStreamSources dependencySubsystemParserFactory = serverProvisioning.getSubsystemInputStreamSourcesMap().get(dependency);
-            inputStreamSourceResolver.addAllSubsystemFileSources(dependencySubsystemParserFactory);
-        }
-    }
-
-    private static void processConfig(FeaturePack featurePack, ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed) throws IOException, XMLStreamException {
-        final SubsystemInputStreamSources subsystemInputStreamSources = serverProvisioning.getSubsystemInputStreamSourcesMap().get(featurePack);
-        final Config config = featurePack.getDescription().getConfig();
-        try (ZipFile zipFile = new ZipFile(featurePack.getFeaturePackFile())) {
-            for (ConfigFile configFile : config.getDomainConfigFiles()) {
-                processConfigFile(configFile, featurePack, zipFile, subsystemInputStreamSources, "domain", outputDirectory, filesProcessed);
-            }
-            for (ConfigFile configFile : config.getStandaloneConfigFiles()) {
-                processConfigFile(configFile, featurePack, zipFile, subsystemInputStreamSources, "server", outputDirectory, filesProcessed);
-            }
-        }
-        for (FeaturePack dependency : featurePack.getDependencies()) {
-            processConfig(dependency, serverProvisioning, outputDirectory, filesProcessed);
-        }
-    }
-
-    private static void processConfigFile(ConfigFile configFile, FeaturePack featurePack, ZipFile zipFile, SubsystemInputStreamSources subsystemInputStreamSources, String templateRootElementName, File outputDirectory, Set<String> filesProcessed) throws IOException, XMLStreamException {
-        if (!filesProcessed.add(configFile.getOutputFile())) {
-            return;
-        }
-        ZipEntry templateFileZipEntry = zipFile.getEntry(configFile.getTemplate());
-        if (templateFileZipEntry == null) {
-            throw new RuntimeException("Feature pack "+featurePack.getFeaturePackFile()+" template file "+configFile.getTemplate()+" not found");
-        }
-        ZipEntry subsystemsFileZipEntry = zipFile.getEntry(configFile.getSubsystems());
-        if (subsystemsFileZipEntry == null) {
-            throw new RuntimeException("Feature pack "+featurePack.getFeaturePackFile()+" subsystems file "+configFile.getSubsystems()+" not found");
-        }
-        new ConfigurationAssembler(subsystemInputStreamSources,
-                new ZipEntryInputStreamSource(featurePack.getFeaturePackFile(), templateFileZipEntry),
-                templateRootElementName,
-                new ZipEntryInputStreamSource(featurePack.getFeaturePackFile(), subsystemsFileZipEntry),
-                new File(outputDirectory, configFile.getOutputFile()),
-                new MapPropertyResolver(configFile.getProperties()))
-                .assemble();
     }
 
     private static void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
@@ -302,23 +153,208 @@ public class ServerProvisioner {
 
             if (schemaOutputDirectory != null) {
                 // extract schemas, if any
-                try (ZipFile zip = new ZipFile(artifactFile)) {
-                    // extract subsystem template and schema, if present
-                    if (zip.getEntry("schema") != null) {
-                        Enumeration<? extends ZipEntry> entries = zip.entries();
-                        while (entries.hasMoreElements()) {
-                            ZipEntry entry = entries.nextElement();
-                            if (!entry.isDirectory()) {
-                                String entryName = entry.getName();
-                                if (entryName.startsWith(SUBSYSTEM_SCHEMA_ENTRY_PREFIX)) {
-                                    try (InputStream in = zip.getInputStream(entry)) {
-                                        FileUtils.copyFile(in, new File(schemaOutputDirectory, entryName.substring(SUBSYSTEM_SCHEMA_ENTRY_PREFIX.length())));
-                                    }
-                                }
-                            }
+                FileUtils.extractSchemas(artifactFile, schemaOutputDirectory);
+            }
+        }
+    }
+
+    private static void processModules(ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException, XMLStreamException {
+        // 1. gather the modules for each feature pack
+        final Map<FeaturePack, List<FeaturePack.Module>> featurePackModulesMap = new HashMap<>();
+        Set<ModuleIdentifier> moduleIdentifiers = new HashSet<>();
+        for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
+            getLog().debugf("Gathering modules for provisioning feature pack %s", provisioningFeaturePack.getFeaturePack().getFeaturePackFile());
+            for (FeaturePack.Module module : provisioningFeaturePack.getModules(artifactFileResolver).values()) {
+                final ModuleIdentifier moduleIdentifier = module.getIdentifier();
+                if (moduleIdentifiers.add(moduleIdentifier)) {
+                    getLog().debugf("Adding module %s from feature pack %s", moduleIdentifier, module.getFeaturePack().getFeaturePackFile());
+                    List<FeaturePack.Module> featurePackModules = featurePackModulesMap.get(module.getFeaturePack());
+                    if (featurePackModules == null) {
+                        featurePackModules = new ArrayList<>();
+                        featurePackModulesMap.put(module.getFeaturePack(), featurePackModules);
+                    }
+                    featurePackModules.add(module);
+                } else {
+                    getLog().debugf("Skipping %s from feature pack %s. A module with such identifier is already in the provisioning module set.", moduleIdentifier, module.getFeaturePack().getFeaturePackFile());
+                }
+            }
+        }
+        // 2. provision each feature pack modules
+        for (Map.Entry<FeaturePack, List<FeaturePack.Module>> mapEntry : featurePackModulesMap.entrySet()) {
+            FeaturePack featurePack = mapEntry.getKey();
+            List<FeaturePack.Module> includedModules = mapEntry.getValue();
+            processFeaturePackModules(featurePack, includedModules, serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+        }
+    }
+
+    private static void processFeaturePackModules(FeaturePack featurePack, List<FeaturePack.Module> includedModules, ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+        final boolean thinServer = !serverProvisioning.getDescription().isCopyModuleArtifacts();
+        // create the module's artifact property replacer
+        final BuildPropertyReplacer buildPropertyReplacer = thinServer ? new BuildPropertyReplacer(new ModuleArtifactPropertyResolver(featurePack.getArtifactResolver())) : null;
+        // process each module file
+        try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
+            for (FeaturePack.Module module : includedModules) {
+                // process the module file
+                final String jarEntryName = module.getModuleFile();
+                filesProcessed.add(jarEntryName);
+                File targetFile = new File(outputDirectory, jarEntryName);
+                // ensure parent dirs exist
+                targetFile.getParentFile().mkdirs();
+                // extract the module file
+                FileUtils.extractFile(jar, jarEntryName, targetFile);
+                // read module xml to string for content update
+                String moduleXmlContents = FileUtils.readFile(targetFile);
+                // parse the module xml
+                ModuleParseResult result = module.getModuleParseResult();
+                // process module artifacts
+                for (ModuleParseResult.ArtifactName artifactName : result.getArtifacts()) {
+                    String artifactCoords = artifactName.getArtifactCoords();
+                    String options = artifactName.getOptions();
+                    boolean jandex = false;
+                    if (options != null) {
+                        jandex = options.contains("jandex"); //todo: eventually we may need options to have a proper query string type syntax
+                        moduleXmlContents = moduleXmlContents.replace(artifactName.toString(), artifactCoords); //todo: all these replace calls are a bit yuck, we may need proper solution if this gets more complex
+                    }
+                    Artifact artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
+                    if (artifact == null) {
+                        throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + featurePack.getFeaturePackFile());
+                    }
+                    try {
+                        // process the module artifact
+                        File artifactFile = artifactFileResolver.getArtifactFile(artifact);
+                        // add all subsystem templates
+                        serverProvisioning.getConfig().getInputStreamSources().addAllSubsystemFileSourcesFromZipFile(artifactFile);
+                        // extract schemas if needed
+                        if (schemaOutputDirectory != null) {
+                            FileUtils.extractSchemas(artifactFile, schemaOutputDirectory);
                         }
+                        if (jandex) {
+                            String baseName = artifactFile.getName().substring(0, artifactFile.getName().lastIndexOf("."));
+                            String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf("."));
+                            File target = new File(targetFile.getParent(), baseName + "-jandex" + extension);
+                            JandexIndexer.createIndex(artifactFile, new FileOutputStream(target));
+                            moduleXmlContents = moduleXmlContents.replaceAll("(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "$1<artifact name=\"\\${" + artifactCoords + "}\" />$1<resource-root path=\"" + target.getName() + "\"/>");
+                        }
+                        if (!thinServer) {
+                            // copy the artifact
+                            String artifactFileName = artifactFile.getName();
+                            FileUtils.copyFile(artifactFile, new File(targetFile.getParent(), artifactFileName));
+                            // update module xml content
+                            moduleXmlContents = moduleXmlContents.replaceAll("<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "<resource-root path=\"" + artifactFileName + "\"/>");
+                        }
+                    } catch (Throwable t) {
+                        throw new RuntimeException("Could not extract resources from " + artifactName, t);
                     }
                 }
+                if (thinServer) {
+                    // replace artifact coords properties with the ones expected by jboss-modules
+                    moduleXmlContents = buildPropertyReplacer.replaceProperties(moduleXmlContents);
+                }
+                // write updated module xml content
+                FileUtils.copyFile(new ByteArrayInputStream(moduleXmlContents.getBytes("UTF-8")), targetFile);
+
+                // extract all other files in the module dir
+                for (String moduleDirFile : module.getModuleDirFiles()) {
+                    filesProcessed.add(moduleDirFile);
+                    FileUtils.extractFile(jar, moduleDirFile, new File(outputDirectory, moduleDirFile));
+                }
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException("Failed to process feature pack " + featurePack.getFeaturePackFile() + " modules", e);
+        }
+    }
+
+    private static void processConfig(ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed) throws IOException, XMLStreamException {
+        ServerProvisioning.Config provisioningConfig = serverProvisioning.getConfig();
+        // 1. collect and merge each feature pack configs
+        for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
+            processFeaturePackConfig(provisioningFeaturePack, provisioningConfig);
+        }
+        // 2. assemble the merged configs
+        for (ServerProvisioning.ConfigFile provisioningConfigFile : provisioningConfig.getDomainConfigFiles().values()) {
+            if (provisioningConfigFile.getTemplateInputStreamSource() == null) {
+                getLog().debugf("Skipping assembly of config file %s, template not set.", provisioningConfigFile.getOutputFile());
+                continue;
+            }
+            getLog().debugf("Assembling config file %s", provisioningConfigFile.getOutputFile());
+            filesProcessed.add(provisioningConfigFile.getOutputFile());
+            new ConfigurationAssembler(provisioningConfig.getInputStreamSources(),
+                    provisioningConfigFile.getTemplateInputStreamSource(),
+                    "domain",
+                    provisioningConfigFile.getSubsystems(),
+                    new File(outputDirectory, provisioningConfigFile.getOutputFile()))
+                    .assemble();
+        }
+        for (ServerProvisioning.ConfigFile provisioningConfigFile : provisioningConfig.getStandaloneConfigFiles().values()) {
+            if (provisioningConfigFile.getTemplateInputStreamSource() == null) {
+                getLog().debugf("Skipping assembly of config file %s, template not set.", provisioningConfigFile.getOutputFile());
+                continue;
+            }
+            getLog().debugf("Assembling config file %s", provisioningConfigFile.getOutputFile());
+            filesProcessed.add(provisioningConfigFile.getOutputFile());
+            new ConfigurationAssembler(provisioningConfig.getInputStreamSources(),
+                    provisioningConfigFile.getTemplateInputStreamSource(),
+                    "server",
+                    provisioningConfigFile.getSubsystems(),
+                    new File(outputDirectory, provisioningConfigFile.getOutputFile()))
+                    .assemble();
+        }
+    }
+
+    private static void processFeaturePackConfig(ServerProvisioningFeaturePack provisioningFeaturePack, ServerProvisioning.Config provisioningConfig) throws IOException, XMLStreamException {
+        FeaturePack featurePack = provisioningFeaturePack.getFeaturePack();
+        getLog().debug("Processing provisioning feature pack "+featurePack.getFeaturePackFile()+" configs");
+        try (ZipFile zipFile = new ZipFile(featurePack.getFeaturePackFile())) {
+            for (ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile : provisioningFeaturePack.getDomainConfigFiles()) {
+                processFeaturePackConfigFile(serverProvisioningFeaturePackConfigFile, zipFile, provisioningFeaturePack, provisioningConfig.getDomainConfigFiles());
+            }
+            for (ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile : provisioningFeaturePack.getStandaloneConfigFiles()) {
+                processFeaturePackConfigFile(serverProvisioningFeaturePackConfigFile, zipFile, provisioningFeaturePack, provisioningConfig.getStandaloneConfigFiles());
+            }
+        }
+    }
+
+    private static void processFeaturePackConfigFile(ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile, ZipFile zipFile, ServerProvisioningFeaturePack provisioningFeaturePack, Map<String, ServerProvisioning.ConfigFile> provisioningConfigFiles) throws IOException, XMLStreamException {
+        ConfigFile configFile = serverProvisioningFeaturePackConfigFile.getFeaturePackConfigFile();
+        // get provisioning config file for the output file being processed
+        ServerProvisioning.ConfigFile provisioningConfigFile = provisioningConfigFiles.get(configFile.getOutputFile());
+        if (provisioningConfigFile == null) {
+            // the provisioning config file does not exists yet, create one
+            provisioningConfigFile = new ServerProvisioning.ConfigFile(configFile.getOutputFile());
+            provisioningConfigFiles.put(configFile.getOutputFile(), provisioningConfigFile);
+        }
+        ConfigFileOverride configFileOverride = serverProvisioningFeaturePackConfigFile.getConfigFileOverride();
+        // process template
+        if (configFileOverride == null || configFileOverride.isUseTemplate()) {
+            // template file from this config file to be used
+            // get the template's file zip entry
+            ZipEntry templateFileZipEntry = zipFile.getEntry(configFile.getTemplate());
+            if (templateFileZipEntry == null) {
+                throw new RuntimeException("Feature pack " + provisioningFeaturePack.getFeaturePack().getFeaturePackFile() + " template file " + configFile.getTemplate() + " not found");
+            }
+            // set the input stream source
+            provisioningConfigFile.setTemplateInputStreamSource(new ZipEntryInputStreamSource(provisioningFeaturePack.getFeaturePack().getFeaturePackFile(), templateFileZipEntry));
+        }
+        // get this config file subsystems
+        Map<String, Map<String, SubsystemConfig>> subsystems = serverProvisioningFeaturePackConfigFile.getSubsystems();
+        // merge the subsystems in the provisioning config file
+        for (Map.Entry<String, Map<String, SubsystemConfig>> subsystemsEntry : subsystems.entrySet()) {
+            // get the subsystems in the provisioning config file
+            String subsystemsName = subsystemsEntry.getKey();
+            Map<String, SubsystemConfig> subsystemConfigMap = subsystemsEntry.getValue();
+            Map<String, SubsystemConfig> provisioningSubsystems = provisioningConfigFile.getSubsystems().get(subsystemsName);
+            if (provisioningSubsystems == null) {
+                // do not exist yet, create it
+                provisioningSubsystems = new HashMap<>();
+                provisioningConfigFile.getSubsystems().put(subsystemsName, provisioningSubsystems);
+            }
+            // add the 'new' subsystem configs and related input stream sources
+            for (Map.Entry<String, SubsystemConfig> subsystemConfigMapEntry : subsystemConfigMap.entrySet()) {
+                String subsystemFile = subsystemConfigMapEntry.getKey();
+                SubsystemConfig subsystemConfig = subsystemConfigMapEntry.getValue();
+                getLog().debugf("Adding subsystem config %s to provisioning config file %s", subsystemFile, provisioningConfigFile.getOutputFile());
+                // put subsystem config
+                provisioningSubsystems.put(subsystemFile, subsystemConfig);
             }
         }
     }
@@ -330,41 +366,45 @@ public class ServerProvisioner {
         }
     }
 
-    private static void extractArtifact(File file, File target, CopyArtifact copy) throws IOException {
-        try (ZipFile zip = new ZipFile(file)) {
-            Enumeration<? extends ZipEntry> entries = zip.entries();
-            while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
-                if (copy.includeFile(entry.getName())) {
-                    if (entry.isDirectory()) {
-                        new File(target, entry.getName()).mkdirs();
-                    } else {
-                        try (InputStream in = zip.getInputStream(entry)) {
-                            FileUtils.copyFile(in, new File(target, entry.getName()));
-                        }
-                    }
-                }
-            }
+    private static void processProvisioningFeaturePackContents(ServerProvisioningFeaturePack provisioningFeaturePack, File outputDirectory, Set<String> filesProcessed) throws IOException {
+        if (provisioningFeaturePack.getDescription().includesContentFiles()) {
+            processFeaturePackContents(provisioningFeaturePack.getFeaturePack(), provisioningFeaturePack.getDescription().getContentFilters(), outputDirectory, filesProcessed);
         }
     }
 
-    private static void extractFeaturePackContents(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed) throws IOException {
+    private static void processFeaturePackContents(FeaturePack featurePack, ServerProvisioningDescription.FeaturePack.ContentFilters contentFilters, File outputDirectory, Set<String> filesProcessed) throws IOException {
         final int fileNameWithoutContentsStart = Locations.CONTENT.length() + 1;
-        try(JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
+        try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
             for (String contentFile : featurePack.getContentFiles()) {
                 final String outputFile = contentFile.substring(fileNameWithoutContentsStart);
-                if (!filesProcessed.add(outputFile)) {
+                boolean include = true;
+                if (contentFilters != null) {
+                    include = contentFilters.isInclude();
+                    for (FileFilter contentFilter : contentFilters.getFilters()) {
+                        if (contentFilter.matches(outputFile) && !contentFilter.isInclude()) {
+                            include = false;
+                            break;
+                        }
+                    }
+                }
+                if (!include) {
+                    getLog().debugf("Skipping feature pack %s filtered content file %s", featurePack.getFeaturePackFile(), outputFile);
                     continue;
                 }
+                if (!filesProcessed.add(outputFile)) {
+                    getLog().debugf("Skipping already processed feature pack %s content file %s", featurePack.getFeaturePackFile(), outputFile);
+                    continue;
+                }
+                getLog().debugf("Adding feature pack %s content file %s", featurePack.getFeaturePackFile(), outputFile);
                 FileUtils.extractFile(jar, contentFile, new java.io.File(outputDirectory, outputFile));
             }
         }
         for (FeaturePack dependency : featurePack.getDependencies()) {
-            extractFeaturePackContents(dependency, outputDirectory, filesProcessed);
+            processFeaturePackContents(dependency, contentFilters, outputDirectory, filesProcessed);
         }
     }
 
-    private static void processFilePermissions(FeaturePack featurePack, File outputDirectory) throws IOException {
+    private static void processFeaturePackFilePermissions(FeaturePack featurePack, File outputDirectory) throws IOException {
         final Path baseDir = Paths.get(outputDirectory.getAbsolutePath());
         final List<FilePermission> filePermissions = featurePack.getDescription().getFilePermissions();
         Files.walkFileTree(baseDir, new SimpleFileVisitor<Path>() {
@@ -396,7 +436,25 @@ public class ServerProvisioner {
             }
         });
         for (FeaturePack dependency : featurePack.getDependencies()) {
-            processFilePermissions(dependency, outputDirectory);
+            processFeaturePackFilePermissions(dependency, outputDirectory);
+        }
+    }
+
+    private static void extractArtifact(File file, File target, CopyArtifact copy) throws IOException {
+        try (ZipFile zip = new ZipFile(file)) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (copy.includeFile(entry.getName())) {
+                    if (entry.isDirectory()) {
+                        new File(target, entry.getName()).mkdirs();
+                    } else {
+                        try (InputStream in = zip.getInputStream(entry)) {
+                            FileUtils.copyFile(in, new File(target, entry.getName()));
+                        }
+                    }
+                }
+            }
         }
     }
 

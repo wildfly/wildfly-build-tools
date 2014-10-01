@@ -18,6 +18,9 @@ package org.wildfly.build.provisioning.model;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.wildfly.build.common.model.ConfigOverride;
+import org.wildfly.build.common.model.FileFilter;
 import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.common.model.CopyArtifact;
 
@@ -28,7 +31,7 @@ import org.wildfly.build.common.model.CopyArtifact;
  */
 public class ServerProvisioningDescription {
 
-    private final List<Artifact> featurePacks = new ArrayList<>();
+    private final List<FeaturePack> featurePacks = new ArrayList<>();
     private final List<Artifact> versionOverrides = new ArrayList<>();
     private final List<CopyArtifact> copyArtifacts = new ArrayList<>();
 
@@ -36,7 +39,7 @@ public class ServerProvisioningDescription {
 
     private boolean extractSchemas;
 
-    public List<Artifact> getFeaturePacks() {
+    public List<FeaturePack> getFeaturePacks() {
         return featurePacks;
     }
 
@@ -64,4 +67,150 @@ public class ServerProvisioningDescription {
         return copyArtifacts;
     }
 
+    /**
+     *
+     */
+    public static class FeaturePack {
+
+        private final Artifact artifact;
+        private final ModuleFilters moduleFilters;
+        private final ConfigOverride configOverride;
+        private final ContentFilters contentFilters;
+        private final List<Subsystem> subsystems;
+
+        FeaturePack(Artifact artifact, ModuleFilters moduleFilters, ConfigOverride configOverride, ContentFilters contentFilters, List<Subsystem> subsystems) {
+            this.artifact = artifact;
+            this.moduleFilters = moduleFilters;
+            this.configOverride = configOverride;
+            this.contentFilters = contentFilters;
+            this.subsystems = subsystems;
+        }
+
+        public Artifact getArtifact() {
+            return artifact;
+        }
+
+        /**
+         *
+         * @return the modules filters; if null that translates to include all modules
+         */
+        public ModuleFilters getModuleFilters() {
+            return moduleFilters;
+        }
+
+        /**
+         *
+         * @return the configuration to include; may be null, which translates to include the feature pack configuration without any change
+         */
+        public ConfigOverride getConfigOverride() {
+            return configOverride;
+        }
+
+        /**
+         *
+         * @return the content filters; if null that translates to include all content files
+         */
+        public ContentFilters getContentFilters() {
+            return contentFilters;
+        }
+
+        /**
+         *
+         * @return a list containing the subsystems to include
+         */
+        public List<Subsystem> getSubsystems() {
+            return subsystems;
+        }
+
+        /**
+         *
+         * @return
+         */
+        public boolean includesContentFiles() {
+            if ((configOverride != null || subsystems != null || moduleFilters != null) && contentFilters == null) {
+                // if there is any kind of other feature pack filtering, and no content filters are specified, then assume no content files should be included
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         *
+         */
+        public static class ModuleFilters {
+
+            private final List<ModuleFilter> filters = new ArrayList<>();
+            private final boolean include;
+
+            ModuleFilters(boolean include) {
+                this.include = include;
+            }
+
+            /**
+             *
+             * @return a list containing all filters
+             */
+            public List<ModuleFilter> getFilters() {
+                return filters;
+            }
+
+            /**
+             *
+             * @return true if modules not filtered should be included
+             */
+            public boolean isInclude() {
+                return include;
+            }
+        }
+
+        /**
+         *
+         */
+        public static class ContentFilters {
+
+            private final List<FileFilter> filters = new ArrayList<>();
+            private final boolean include;
+
+            ContentFilters(boolean include) {
+                this.include = include;
+            }
+
+            /**
+             *
+             * @return a list containing all filters
+             */
+            public List<FileFilter> getFilters() {
+                return filters;
+            }
+
+            /**
+             *
+             * @return true if content files not filtered should be included
+             */
+            public boolean isInclude() {
+                return include;
+            }
+        }
+
+        /**
+         *
+         */
+        public static class Subsystem {
+            private final String module;
+            private final boolean transitive;
+
+            public Subsystem(String module, boolean transitive) {
+                this.module = module;
+                this.transitive = transitive;
+            }
+
+            public String getName() {
+                return module;
+            }
+
+            public boolean isTransitive() {
+                return transitive;
+            }
+        }
+    }
 }

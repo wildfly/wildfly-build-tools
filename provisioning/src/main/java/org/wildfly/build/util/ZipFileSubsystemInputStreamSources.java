@@ -16,12 +16,18 @@
 
 package org.wildfly.build.util;
 
+import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.configassembly.SubsystemInputStreamSources;
+import org.wildfly.build.pack.model.Artifact;
+import org.wildfly.build.pack.model.FeaturePack;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * @author Eduardo Martins
@@ -37,7 +43,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
      * @param zipEntry
      */
     public void addSubsystemFileSource(String subsystemFileName, File zipFile, ZipEntry zipEntry) {
-        inputStreamSourceMap.put(subsystemFileName, new ZipEntryInputStreamSource(zipFile, zipEntry));
+       inputStreamSourceMap.put(subsystemFileName, new ZipEntryInputStreamSource(zipFile, zipEntry));
     }
 
     /**
@@ -52,6 +58,101 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
         }
     }
 
+    /**
+     * Adds all file sources in the specified zip file.
+     * @param file
+     * @throws IOException
+     */
+    public void addAllSubsystemFileSourcesFromZipFile(File file) throws IOException {
+        try (ZipFile zip = new ZipFile(file)) {
+            // extract subsystem template and schema, if present
+            if (zip.getEntry("subsystem-templates") != null) {
+                Enumeration<? extends ZipEntry> entries = zip.entries();
+                while (entries.hasMoreElements()) {
+                    ZipEntry entry = entries.nextElement();
+                    if (!entry.isDirectory()) {
+                        String entryName = entry.getName();
+                        if (entryName.startsWith("subsystem-templates/")) {
+                            addSubsystemFileSource(entryName.substring("subsystem-templates/".length()), file, entry);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds the file source for the specified subsystem, from the specified zip file.
+     * @param subsystem
+     * @param file
+     * @return true if such subsystem file source was found and added; false otherwise
+     * @throws IOException
+     */
+    public boolean addSubsystemFileSourceFromZipFile(String subsystem, File file) throws IOException {
+        try (ZipFile zip = new ZipFile(file)) {
+            String entryName = "subsystem-templates/"+subsystem;
+            ZipEntry entry = zip.getEntry(entryName);
+            if (entry != null) {
+                addSubsystemFileSource(subsystem, file, entry);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Adds all file sources in the specified module's artifacts.
+     * @param module
+     * @param artifactFileResolver
+     * @param transitive
+     * @throws IOException
+     */
+    public void addAllSubsystemFileSourcesFromModule(FeaturePack.Module module, ArtifactFileResolver artifactFileResolver, boolean transitive) throws IOException {
+        // the subsystem templates are included in module artifacts files
+        for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
+            // resolve the artifact
+            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifactCoords());
+            if (artifact == null) {
+                throw new RuntimeException("Could not resolve module resource artifact " + artifactName.getArtifactCoords() + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
+            }
+            // resolve the artifact file
+            File artifactFile = artifactFileResolver.getArtifactFile(artifact);
+            // get the subsystem templates
+            addAllSubsystemFileSourcesFromZipFile(artifactFile);
+        }
+        if (transitive) {
+            for (FeaturePack.Module dependency : module.getDependencies().values()) {
+                addAllSubsystemFileSourcesFromModule(dependency, artifactFileResolver, false);
+            }
+        }
+    }
+
+    /**
+     * Adds the file source for the specified subsystem, from the specified module's artifacts.
+     * @param subsystem
+     * @param module
+     * @param artifactFileResolver
+     * @return true if such subsystem file source was found and added; false otherwise
+     * @throws IOException
+     */
+    public boolean addSubsystemFileSourceFromModule(String subsystem, FeaturePack.Module module, ArtifactFileResolver artifactFileResolver) throws IOException {
+        // the subsystem templates are included in module artifacts files
+        for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
+            // resolve the artifact
+            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifactCoords());
+            if (artifact == null) {
+                throw new RuntimeException("Could not resolve module resource artifact " + artifactName.getArtifactCoords() + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
+            }
+            // resolve the artifact file
+            File artifactFile = artifactFileResolver.getArtifactFile(artifact);
+            // get the subsystem template from the artifact file
+            if (addSubsystemFileSourceFromZipFile(subsystem, artifactFile)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public InputStreamSource getInputStreamSource(String subsystemFileName) {
         return inputStreamSourceMap.get(subsystemFileName);
@@ -61,4 +162,5 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
     public String toString() {
         return "zip subsystem parser factory files: "+ inputStreamSourceMap.keySet();
     }
+
 }
