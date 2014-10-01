@@ -57,26 +57,25 @@ public class TemplateParser extends NodeParser {
     public TemplateParser(InputStreamSource inputStreamSource, String rootElementName) {
         this.inputStreamSource = inputStreamSource;
         this.rootElementName = rootElementName;
-
     }
 
-    ElementNode getRootNode() {
+    public ElementNode getRootNode() {
         return root;
     }
 
-    ProcessingInstructionNode getExtensionPlaceHolder() {
+    public ProcessingInstructionNode getExtensionPlaceHolder() {
         return extensionPlaceholder;
     }
 
-    Map<String, ProcessingInstructionNode> getSubsystemPlaceholders(){
+    public Map<String, ProcessingInstructionNode> getSubsystemPlaceholders(){
         return subsystemPlaceHolders;
     }
 
-    Map<String, ProcessingInstructionNode> getSocketBindingsPlaceHolders() {
+    public Map<String, ProcessingInstructionNode> getSocketBindingsPlaceHolders() {
         return socketBindingsPlaceHolder;
     }
 
-    void parse() throws IOException, XMLStreamException {
+    public void parse() throws IOException, XMLStreamException {
         try (InputStream in = inputStreamSource.getInputStream()) {
             XMLInputFactory factory = XMLInputFactory.newInstance();
             factory.setProperty(XMLInputFactory.IS_COALESCING, Boolean.FALSE);

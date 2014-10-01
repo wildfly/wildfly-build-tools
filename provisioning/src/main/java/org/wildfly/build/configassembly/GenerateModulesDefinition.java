@@ -30,7 +30,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -128,10 +130,10 @@ public class GenerateModulesDefinition {
         List<ModuleIdentifier> dependencies = new ArrayList<ModuleIdentifier>();
 
         if (!inputFile.getName().equals(SKIP_SUBSYSTEMS)) {
-            SubsystemsParser parser = new SubsystemsParser(new FileInputStreamSource(inputFile));
-            parser.parse();
+            Map<String, Map<String, SubsystemConfig>> subsystems = new HashMap<>();
+            SubsystemsParser.parse(new FileInputStreamSource(inputFile), subsystems);
 
-            for (SubsystemConfig config : parser.getSubsystemConfigs().get(profile)) {
+            for (SubsystemConfig config : subsystems.get(profile).values()) {
                 File configFile = new File(resourcesDir + File.separator + config.getSubsystem());
                 SubsystemParser configParser = new SubsystemParser(null, config.getSupplement(), new FileInputStreamSource(configFile));
                 configParser.parse();

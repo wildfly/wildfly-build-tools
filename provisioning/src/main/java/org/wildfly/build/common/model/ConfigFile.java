@@ -1,4 +1,4 @@
-package org.wildfly.build.pack.model;
+package org.wildfly.build.common.model;
 
 import java.util.Map;
 

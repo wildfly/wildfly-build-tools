@@ -28,13 +28,13 @@ import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.Locations;
 import org.wildfly.build.featurepack.model.FeaturePackBuild;
 import org.wildfly.build.pack.model.Artifact;
-import org.wildfly.build.pack.model.CopyArtifact;
+import org.wildfly.build.common.model.CopyArtifact;
 import org.wildfly.build.pack.model.FeaturePack;
 import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
 import org.wildfly.build.pack.model.FeaturePackDescription;
 import org.wildfly.build.pack.model.FeaturePackDescriptionXMLWriter10;
 import org.wildfly.build.pack.model.FeaturePackFactory;
-import org.wildfly.build.pack.model.FileFilter;
+import org.wildfly.build.common.model.FileFilter;
 import org.wildfly.build.pack.model.ModuleIdentifier;
 import org.wildfly.build.util.FileUtils;
 import org.wildfly.build.util.ModuleParseResult;
@@ -129,7 +129,7 @@ public class FeaturePackBuilder {
                 }
             }
         }
-        knownModules.addAll(dependencyFeaturePack.getModules().keySet());
+        knownModules.addAll(dependencyFeaturePack.getFeaturePackModules().keySet());
         // process its dependencies too
         for (FeaturePack featurePack : dependencyFeaturePack.getDependencies()) {
             processDependency(featurePack, knownModules, buildArtifactResolver, artifactVersionMap);
@@ -149,21 +149,12 @@ public class FeaturePackBuilder {
                 try {
                     ModuleParseResult result = ModuleParser.parse(file);
                     knownModules.add(result.getIdentifier());
-                    for (String artifactName : result.getArtifacts()) {
-                        if(artifactName.startsWith("${") && artifactName.endsWith("}")) {
-                            String prop = artifactName.substring(2, artifactName.length() - 1);
-                            if (prop.contains("?")) {
-                                prop = prop.substring(0, prop.indexOf('?'));
-                            }
-
-                            Artifact artifact = artifactResolver.getArtifact(prop);
-                            if(artifact == null) {
-                                errors.add("Could not determine version for artifact " + artifactName);
-                            }
-                            artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
-                        } else {
-                            getLog().error("Hard coded artifact " + artifactName);
+                    for (ModuleParseResult.ArtifactName artifactName : result.getArtifacts()) {
+                        Artifact artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
+                        if(artifact == null) {
+                            errors.add("Could not determine version for artifact " + artifactName);
                         }
+                        artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
                     }
                     for(ModuleParseResult.ModuleDependency dep : result.getDependencies()) {
                         if(!dep.isOptional()) {

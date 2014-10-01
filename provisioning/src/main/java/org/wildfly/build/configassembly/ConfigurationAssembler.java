@@ -21,9 +21,7 @@
 */
 package org.wildfly.build.configassembly;
 
-import org.wildfly.build.util.BuildPropertyReplacer;
 import org.wildfly.build.util.InputStreamSource;
-import org.wildfly.build.util.PropertyResolver;
 import org.wildfly.build.util.xml.AttributeValue;
 import org.wildfly.build.util.xml.ElementNode;
 import org.wildfly.build.util.xml.FormattingXMLStreamWriter;
@@ -52,26 +50,21 @@ public class ConfigurationAssembler {
     private final SubsystemInputStreamSources subsystemInputStreamSources;
     private final InputStreamSource templateInputStreamSource;
     private final String templateRootElementName;
-    private final InputStreamSource subsystemsInputStreamSource;
     private final File outputFile;
-    private final PropertyResolver properties;
+    private final Map<String, Map<String, SubsystemConfig>> subsystemConfigs;
 
-    public ConfigurationAssembler(SubsystemInputStreamSources subsystemInputStreamSources, InputStreamSource templateInputStreamSource, String templateRootElementName, InputStreamSource subsystemsInputStreamSource, File outputFile, PropertyResolver properties) {
-        this.properties = properties;
+    public ConfigurationAssembler(SubsystemInputStreamSources subsystemInputStreamSources, InputStreamSource templateInputStreamSource, String templateRootElementName, Map<String, Map<String, SubsystemConfig>> subsystemConfigs, File outputFile) {
         this.subsystemInputStreamSources = subsystemInputStreamSources;
         this.templateInputStreamSource = templateInputStreamSource;
         this.templateRootElementName = templateRootElementName;
-        this.subsystemsInputStreamSource = subsystemsInputStreamSource;
+        this.subsystemConfigs = subsystemConfigs;
         this.outputFile = outputFile.getAbsoluteFile();
     }
 
     public void assemble() throws IOException, XMLStreamException {
         TemplateParser templateParser = new TemplateParser(templateInputStreamSource, templateRootElementName);
         templateParser.parse();
-        SubsystemsParser subsystemsParser = new SubsystemsParser(subsystemsInputStreamSource, new BuildPropertyReplacer(properties));
-        subsystemsParser.parse();
-
-        populateTemplate(templateParser, subsystemsParser);
+        populateTemplate(templateParser, subsystemConfigs);
 
         if (outputFile.exists()) {
             outputFile.delete();
@@ -94,7 +87,7 @@ public class ConfigurationAssembler {
         }
     }
 
-    private void populateTemplate(TemplateParser templateParser, SubsystemsParser subsystemsParser) throws IOException, XMLStreamException{
+    private void populateTemplate(TemplateParser templateParser, Map<String, Map<String, SubsystemConfig>> subsystemsConfigs) throws IOException, XMLStreamException{
         final Set<String> extensions = new TreeSet<String>();
         final Map<String, Map<String, ElementNode>> socketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
         final Map<String, Map<String, ElementNode>> outboundSocketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
@@ -102,9 +95,9 @@ public class ConfigurationAssembler {
             final String subsystemName = subsystemEntry.getKey();
             final String groupName = subsystemEntry.getValue().getDataValue("socket-binding-group", "");
 
-            final SubsystemConfig[] subsystems = subsystemsParser.getSubsystemConfigs().get(subsystemName);
+            final Map<String, SubsystemConfig> subsystems = subsystemsConfigs.get(subsystemName);
             if (subsystems == null) {
-                throw new IllegalStateException("Could not find a subsystems configuration called '" + subsystemEntry.getKey() + "' in " + subsystemsInputStreamSource);
+                throw new IllegalStateException("Could not find a subsystems configuration called '" + subsystemEntry.getKey());
             }
             final Map<String, ElementNode> socketBindings = new TreeMap<String, ElementNode>();
             if (socketBindingsByGroup.put(groupName, socketBindings) != null) {
@@ -113,7 +106,7 @@ public class ConfigurationAssembler {
             final Map<String, ElementNode> outboundSocketBindings = new TreeMap<String, ElementNode>();
             outboundSocketBindingsByGroup.put(groupName, outboundSocketBindings);
 
-            for (SubsystemConfig subsystem : subsystems) {
+            for (SubsystemConfig subsystem : subsystems.values()) {
                 final InputStreamSource inputStreamSource = subsystemInputStreamSources.getInputStreamSource(subsystem.getSubsystem());
                 if (inputStreamSource == null) {
                     throw new IllegalStateException("Could not resolve '" + subsystem);

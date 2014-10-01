@@ -34,7 +34,7 @@
 
     <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
 
-    <name>WildFly: Server Provisioning Maven Plugin</name>
+    <name>WildFly Build Tools: Server Provisioning Maven Plugin</name>
     <packaging>maven-plugin</packaging>
 
     <dependencies>

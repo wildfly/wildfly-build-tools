@@ -34,7 +34,7 @@
 
     <artifactId>wildfly-server-provisioning</artifactId>
 
-    <name>WildFly: Server Provisioning</name>
+    <name>WildFly Build Tools: Server Provisioning</name>
 
     <dependencies>
 

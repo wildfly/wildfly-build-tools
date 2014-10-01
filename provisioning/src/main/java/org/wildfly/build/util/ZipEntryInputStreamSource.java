@@ -34,6 +34,11 @@ public class ZipEntryInputStreamSource implements InputStreamSource {
         }
     }
 
+    @Override
+    public String toString() {
+        return "ZipEntryInputStreamSource[file = "+file+", zipEntry = "+zipEntry.getName()+"]";
+    }
+
     private static class ZipEntryInputStream extends InputStream {
 
         private final ZipFile zipFile;
