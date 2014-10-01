@@ -24,6 +24,7 @@ package org.wildfly.build.provisioning.model;
 
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.wildfly.build.common.model.CopyArtifactsModelParser10;
 import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.util.BuildPropertyReplacer;
 import org.wildfly.build.util.PropertyResolver;
@@ -49,6 +50,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
 
 
     private final BuildPropertyReplacer propertyReplacer;
+    private final CopyArtifactsModelParser10 copyArtifactsModelParser;
 
     public static final String NAMESPACE_1_0 = "urn:wildfly:server-provisioning:1.0";
 
@@ -62,6 +64,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
         ARTIFACT("artifact"),
         VERSION_OVERRIDES("version-overrides"),
         VERSION_OVERRIDE("version-override"),
+        COPY_ARTIFACTS(CopyArtifactsModelParser10.ELEMENT_LOCAL_NAME),
         ;
 
 
@@ -74,6 +77,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
             elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT.getLocalName()), Element.ARTIFACT);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.VERSION_OVERRIDES.getLocalName()), Element.VERSION_OVERRIDES);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.VERSION_OVERRIDE.getLocalName()), Element.VERSION_OVERRIDE);
+            elementsMap.put(new QName(NAMESPACE_1_0, Element.COPY_ARTIFACTS.getLocalName()), Element.COPY_ARTIFACTS);
             elements = elementsMap;
         }
 
@@ -131,6 +135,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
             attributesMap.put(new QName(CLASSIFIER.getLocalName()), CLASSIFIER);
             attributesMap.put(new QName(EXTENSION.getLocalName()), EXTENSION);
             attributesMap.put(new QName(VERSION.getLocalName()), VERSION);
+
             attributes = attributesMap;
         }
 
@@ -157,6 +162,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
 
     ServerProvisioningDescriptionModelParser10(PropertyResolver resolver) {
         this.propertyReplacer = new BuildPropertyReplacer(resolver);
+        this.copyArtifactsModelParser = new CopyArtifactsModelParser10(this.propertyReplacer);
     }
 
     @Override
@@ -194,6 +200,9 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                             break;
                         case VERSION_OVERRIDES:
                             parseVersionOverrides(reader, result);
+                            break;
+                        case COPY_ARTIFACTS:
+                            copyArtifactsModelParser.parseCopyArtifacts(reader, result.getCopyArtifacts());
                             break;
                         default:
                             throw ParsingUtils.unexpectedContent(reader);
@@ -298,4 +307,5 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
 
         overrides.add(new Artifact(groupId, artifact, classifier, extension, version));
     }
+
 }

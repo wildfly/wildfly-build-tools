@@ -1,9 +1,9 @@
 package org.wildfly.build.featurepack.model;
 
-import org.wildfly.build.pack.model.Config;
-import org.wildfly.build.pack.model.CopyArtifact;
-import org.wildfly.build.pack.model.FileFilter;
-import org.wildfly.build.pack.model.FilePermission;
+import org.wildfly.build.common.model.Config;
+import org.wildfly.build.common.model.CopyArtifact;
+import org.wildfly.build.common.model.FileFilter;
+import org.wildfly.build.common.model.FilePermission;
 
 import java.util.ArrayList;
 import java.util.List;
