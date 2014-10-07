@@ -30,6 +30,7 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.build.AetherArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.pack.model.DelegatingArtifactResolver;
 import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
 import org.wildfly.build.provisioning.ServerProvisioner;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
@@ -95,6 +96,10 @@ public class ServerProvisioningMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
 
+
+    @Parameter(alias = "system-property-version-overrides", defaultValue = "false", readonly = true)
+    private Boolean systemPropertyVersionOverrides = false;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try (FileInputStream configStream = new FileInputStream(new File(configDir, configFile))) {
@@ -109,6 +114,10 @@ public class ServerProvisioningMojo extends AbstractMojo {
             final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(properties)).parse(configStream);
             AetherArtifactFileResolver aetherArtifactFileResolver = new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos);
             ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
+            if(systemPropertyVersionOverrides) {
+                overrideArtifactResolver = new DelegatingArtifactResolver(new PropertiesBasedResolver(properties), overrideArtifactResolver);
+            }
+
             ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), aetherArtifactFileResolver, overrideArtifactResolver);
         } catch (Exception e) {
             throw new RuntimeException(e);
