@@ -362,7 +362,7 @@ public class ServerProvisioner {
     private static void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         processCopyArtifacts(featurePack.getDescription().getCopyArtifacts(), featurePack.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         for (FeaturePack dependency : featurePack.getDependencies()) {
-            processCopyArtifacts(dependency.getDescription().getCopyArtifacts(), dependency.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+            processFeaturePackCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         }
     }
 
