@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.wildfly.build.plugin;
+package org.wildfly.build.util;
 
 import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.pack.model.Artifact;
@@ -26,11 +26,11 @@ import java.util.Properties;
  *
  * @author Stuart Douglas
  */
-public class PropertiesBasedResolver implements ArtifactResolver {
+public class PropertiesBasedArtifactResolver implements ArtifactResolver {
 
     private final Properties properties;
 
-    public PropertiesBasedResolver(Properties properties) {
+    public PropertiesBasedArtifactResolver(Properties properties) {
         this.properties = properties;
     }
 

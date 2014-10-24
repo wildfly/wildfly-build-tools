@@ -61,7 +61,7 @@
          -->
         <version.junit>4.11</version.junit>
 
-        <version.org.apache.maven.maven-core>3.0.5</version.org.apache.maven.maven-core>
+        <version.org.apache.maven.maven-core>3.1.0</version.org.apache.maven.maven-core>
         <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>3.2.0
         </version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
         <version.org.apache.maven.plugin-tools>${version.plugin.plugin}</version.org.apache.maven.plugin-tools>
@@ -72,7 +72,6 @@
         <version.org.jboss.logging.processor>1.2.0.Final</version.org.jboss.logging.processor>
         <version.org.jboss.logmanager>1.5.2.Final</version.org.jboss.logmanager>
         <version.org.sonatype.aether>1.13.1</version.org.sonatype.aether>
-
 
         <!-- Surefire args -->
         <surefire.jpda.args/>
@@ -88,6 +87,7 @@
         <module>feature-pack-build-maven-plugin</module>
         <module>provisioning</module>
         <module>provisioning-maven-plugin</module>
+        <module>provisioning-standalone</module>
     </modules>
 
     <build>
@@ -222,8 +222,20 @@
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>wildfly-server-provisioning-standalone</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             
             <!-- External Dependencies -->
+
+            <dependency>
+                <groupId>org.apache.maven</groupId>
+                <artifactId>maven-aether-provider</artifactId>
+                <version>${version.org.apache.maven.maven-core}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.maven</groupId>
@@ -296,6 +308,42 @@
                 <scope>provided</scope>
                 <!-- Used in maven 3.1.x -->
                 <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.aether</groupId>
+                <artifactId>aether-spi</artifactId>
+                <version>${version.org.eclipse.aether}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.aether</groupId>
+                <artifactId>aether-util</artifactId>
+                <version>${version.org.eclipse.aether}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.aether</groupId>
+                <artifactId>aether-impl</artifactId>
+                <version>${version.org.eclipse.aether}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.aether</groupId>
+                <artifactId>aether-connector-basic</artifactId>
+                <version>${version.org.eclipse.aether}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.aether</groupId>
+                <artifactId>aether-transport-file</artifactId>
+                <version>${version.org.eclipse.aether}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.aether</groupId>
+                <artifactId>aether-transport-http</artifactId>
+                <version>${version.org.eclipse.aether}</version>
             </dependency>
 
             <dependency>

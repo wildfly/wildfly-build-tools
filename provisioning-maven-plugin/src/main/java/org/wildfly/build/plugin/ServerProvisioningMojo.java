@@ -36,6 +36,7 @@ import org.wildfly.build.provisioning.ServerProvisioner;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionModelParser;
 import org.wildfly.build.util.MapPropertyResolver;
+import org.wildfly.build.util.PropertiesBasedArtifactResolver;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -115,7 +116,7 @@ public class ServerProvisioningMojo extends AbstractMojo {
             AetherArtifactFileResolver aetherArtifactFileResolver = new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos);
             ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
             if(systemPropertyVersionOverrides) {
-                overrideArtifactResolver = new DelegatingArtifactResolver(new PropertiesBasedResolver(properties), overrideArtifactResolver);
+                overrideArtifactResolver = new DelegatingArtifactResolver(new PropertiesBasedArtifactResolver(properties), overrideArtifactResolver);
             }
 
             ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), aetherArtifactFileResolver, overrideArtifactResolver);
