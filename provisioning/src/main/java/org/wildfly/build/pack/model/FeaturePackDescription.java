@@ -21,9 +21,9 @@ import org.wildfly.build.common.model.CopyArtifact;
 import org.wildfly.build.common.model.FilePermission;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.Map;
 
 /**
  * Representation of the feature pack metadata
@@ -33,7 +33,7 @@ import java.util.TreeSet;
 public class FeaturePackDescription {
 
     private final List<String> dependencies;
-    private final Set<Artifact> artifactVersions = new TreeSet<>();
+    private final Map<String, Artifact> artifactRefs = new HashMap<>();
     private final Config config;
     private final List<CopyArtifact> copyArtifacts;
     private final List<FilePermission> filePermissions;
@@ -53,8 +53,8 @@ public class FeaturePackDescription {
         return dependencies;
     }
 
-    public Set<Artifact> getArtifactVersions() {
-        return artifactVersions;
+    public Map<String, Artifact> getArtifactRefs() {
+        return artifactRefs;
     }
 
     public Config getConfig() {

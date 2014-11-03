@@ -18,7 +18,9 @@ package org.wildfly.build.pack.model;
 
 import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.ArtifactVersionOverrider;
 import org.wildfly.build.Locations;
+import org.wildfly.build.util.MapArtifactResolver;
 import org.wildfly.build.util.PropertyResolver;
 
 import javax.xml.stream.XMLStreamException;
@@ -35,7 +37,7 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 /**
- * Factory class that creates a feature pack from its artifact coordinates.
+ * Factory class that creates a feature pack from its artifact.
  *
  * @author Stuart Douglas
  * @author Eduardo Martins
@@ -46,26 +48,36 @@ public class FeaturePackFactory {
     private static final String MODULES_ENTRY_NAME_PREFIX = Locations.MODULES + "/";
     private static final String CONTENT_ENTRY_NAME_PREFIX = Locations.CONTENT + "/";
 
-    public static FeaturePack createPack(final Artifact artifactCoords, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver) {
-        return createPack(artifactCoords, artifactFileResolver, versionOverrideResolver, new HashSet<Artifact>());
+    /**
+     *
+     * @param artifact the feature pack's artifact
+     * @param artifactFileResolver the artifact -> artifact file resolver
+     * @return
+     */
+    public static FeaturePack createPack(final Artifact artifact, final ArtifactFileResolver artifactFileResolver) {
+        return createPack(artifact, artifactFileResolver, null, null, new HashSet<Artifact>());
     }
 
     /**
      *
-     * @param artifactCoords the coordinates of the feature pack artifact
+     * @param artifact the feature pack's artifact
      * @param artifactFileResolver the artifact -> artifact file resolver
-     * @param processedFeaturePacks a set containing all parent feature packs, useful to detect cyclic dependencies
+     * @param artifactResolverParent if provided, the feature pack's artifact resolver will first try resolving artifacts from its parent
+     * @param artifactVersionOverrider if provided, will be used to override versions of artifacts referenced by the feature pack
      * @return
      */
-    private static FeaturePack createPack(final Artifact artifactCoords, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver, Set<Artifact> processedFeaturePacks) {
-        if (!processedFeaturePacks.add(artifactCoords)) {
-            throw new IllegalStateException("Cyclic dependency, feature pack "+artifactCoords+" already processed! Feature packs: "+processedFeaturePacks);
+    public static FeaturePack createPack(final Artifact artifact, final ArtifactFileResolver artifactFileResolver, ArtifactResolver artifactResolverParent, ArtifactVersionOverrider artifactVersionOverrider) {
+        return createPack(artifact, artifactFileResolver, artifactResolverParent, artifactVersionOverrider, new HashSet<Artifact>());
+    }
+
+    private static FeaturePack createPack(final Artifact artifact, final ArtifactFileResolver artifactFileResolver, ArtifactResolver artifactResolverParent, ArtifactVersionOverrider artifactVersionOverrider, Set<Artifact> processedFeaturePacks) {
+        if (!processedFeaturePacks.add(artifact)) {
+            throw new IllegalStateException("Cyclic dependency, feature pack "+artifact+" already processed! Feature packs: "+processedFeaturePacks);
         }
-        // resolve feature pack artifact
         // resolve feature pack artifact file
-        File artifactFile = artifactFileResolver.getArtifactFile(artifactCoords);
+        File artifactFile = artifactFileResolver.getArtifactFile(artifact);
         if(artifactFile == null) {
-            throw new RuntimeException("Could not resolve artifact file for feature package  " + artifactCoords);
+            throw new RuntimeException("Could not resolve artifact file for feature package  " + artifact);
         }
         // process the artifact file
         try(JarFile jar = new JarFile(artifactFile)) {
@@ -88,16 +100,19 @@ public class FeaturePackFactory {
             // create description
             final FeaturePackDescription description = createFeaturePackDescription(jar);
             // create feature pack artifact resolver
-            final FeaturePackArtifactResolver featurePackArtifactResolver = new FeaturePackArtifactResolver(description.getArtifactVersions());
-            final DelegatingArtifactResolver delegatingArtifactResolver = new DelegatingArtifactResolver(versionOverrideResolver, featurePackArtifactResolver);
+            final ArtifactResolver artifactRefsResolver = new MapArtifactResolver(description.getArtifactRefs());
+            if (artifactVersionOverrider != null) {
+                artifactVersionOverrider.override(artifactRefsResolver);
+            }
+            ArtifactResolver featurePackArtifactResolver = new DelegatingArtifactResolver(artifactResolverParent, artifactRefsResolver);
             // create dependencies feature packs
             final List<FeaturePack> dependencies = new ArrayList<>();
             for (String dependency : description.getDependencies()) {
-                dependencies.add(createPack(delegatingArtifactResolver.getArtifact(dependency), artifactFileResolver, versionOverrideResolver, new HashSet<>(processedFeaturePacks)));
+                dependencies.add(createPack(FeaturePack.resolveArtifact(dependency, featurePackArtifactResolver), artifactFileResolver, featurePackArtifactResolver, artifactVersionOverrider, new HashSet<>(processedFeaturePacks)));
             }
-            return new FeaturePack(artifactFile, artifactCoords, description, dependencies, delegatingArtifactResolver, configurationFiles, modulesFiles, contentFiles);
+            return new FeaturePack(artifactFile, artifact, description, dependencies, featurePackArtifactResolver, configurationFiles, modulesFiles, contentFiles);
         } catch (Throwable e) {
-            throw new RuntimeException("Failed to create feature pack from " + artifactCoords, e);
+            throw new RuntimeException("Failed to create feature pack from " + artifact, e);
         }
     }
 

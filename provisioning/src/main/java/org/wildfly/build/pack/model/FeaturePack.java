@@ -242,4 +242,18 @@ public class FeaturePack {
             return result;
         }
     }
+
+    /**
+     * Resolves a feature pack's artifact.
+     * @param artifactName
+     * @param artifactResolver
+     * @return
+     */
+    public static Artifact resolveArtifact(String artifactName, ArtifactResolver artifactResolver) {
+        Artifact artifact = Artifact.resolve(artifactName, artifactResolver);
+        if (artifact != null && artifact.getExtension() == null) {
+            artifact.setExtension("zip");
+        }
+        return artifact;
+    }
 }

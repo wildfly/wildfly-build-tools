@@ -43,11 +43,6 @@ public class AetherArtifactFileResolver implements ArtifactFileResolver {
         this.remoteRepos = remoteRepos;
     }
 
-    @Override
-    public File getArtifactFile(String artifactCoords) {
-        return getArtifactFile(new DefaultArtifact(artifactCoords));
-    }
-
     private File getArtifactFile(Artifact artifact) {
         ArtifactRequest request = new ArtifactRequest();
         request.setArtifact(artifact);
@@ -63,11 +58,10 @@ public class AetherArtifactFileResolver implements ArtifactFileResolver {
 
     @Override
     public File getArtifactFile(org.wildfly.build.pack.model.Artifact artifact) {
-        final org.wildfly.build.pack.model.Artifact.GACE GACE = artifact.getGACE();
-        final String groupId = GACE.getGroupId();
-        final String artifactId = GACE.getArtifactId();
-        final String extension = GACE.getExtension() != null ? GACE.getExtension() : "jar";
-        final String classifier = GACE.getClassifier() != null ? GACE.getClassifier() : "";
+        final String groupId = artifact.getGroupId();
+        final String artifactId = artifact.getArtifactId();
+        final String extension = artifact.getExtension() != null ? artifact.getExtension() : "jar";
+        final String classifier = artifact.getClassifier() != null ? artifact.getClassifier() : "";
         return getArtifactFile(new DefaultArtifact(groupId, artifactId, classifier, extension, artifact.getVersion()));
     }
 }

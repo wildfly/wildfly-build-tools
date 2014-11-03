@@ -16,10 +16,12 @@
 
 package org.wildfly.build.pack.model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.wildfly.build.ArtifactResolver;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author Stuart Douglas
@@ -29,13 +31,17 @@ public class DelegatingArtifactResolver implements ArtifactResolver {
     private final List<ArtifactResolver> resolvers = new ArrayList<>();
 
     public DelegatingArtifactResolver(ArtifactResolver... resolvers) {
-        this.resolvers.addAll(Arrays.asList(resolvers));
+        for (ArtifactResolver resolver : resolvers) {
+            if (resolver != null) {
+                this.resolvers.add(resolver);
+            }
+        }
     }
 
     @Override
-    public Artifact getArtifact(String coords) {
+    public Artifact getArtifact(String artifactName) {
         for(ArtifactResolver resolver : resolvers) {
-            Artifact res = resolver.getArtifact(coords);
+            Artifact res = resolver.getArtifact(artifactName);
             if(res != null) {
                 return res;
             }
@@ -44,13 +50,11 @@ public class DelegatingArtifactResolver implements ArtifactResolver {
     }
 
     @Override
-    public Artifact getArtifact(Artifact.GACE GACE) {
+    public Set<String> getArtifactNames() {
+        Set<String> result = new HashSet<>();
         for(ArtifactResolver resolver : resolvers) {
-            Artifact res = resolver.getArtifact(GACE);
-            if(res != null) {
-                return res;
-            }
+            result.addAll(resolver.getArtifactNames());
         }
-        return null;
+        return result;
     }
 }

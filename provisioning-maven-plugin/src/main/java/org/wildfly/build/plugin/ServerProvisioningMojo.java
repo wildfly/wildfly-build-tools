@@ -30,13 +30,15 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.build.AetherArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.ArtifactVersionOverrider;
+import org.wildfly.build.BuildProperties;
 import org.wildfly.build.pack.model.DelegatingArtifactResolver;
-import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
+import org.wildfly.build.util.MapArtifactResolver;
+import org.wildfly.build.util.PropertiesArtifactVersionOverrider;
 import org.wildfly.build.provisioning.ServerProvisioner;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionModelParser;
 import org.wildfly.build.util.MapPropertyResolver;
-import org.wildfly.build.util.PropertiesBasedArtifactResolver;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -97,29 +99,31 @@ public class ServerProvisioningMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
 
+    @Parameter(alias = BuildProperties.USE_MAVEN_PROJECT_ARTIFACT_RESOLVER, defaultValue = "false", readonly = true)
+    private Boolean useMavenProjectArtifactResolver = false;
 
-    @Parameter(alias = "system-property-version-overrides", defaultValue = "false", readonly = true)
+    @Parameter(alias = BuildProperties.SYSTEM_PROPERTIES_VERSION_OVERRIDES, defaultValue = "false", readonly = true)
     private Boolean systemPropertyVersionOverrides = false;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try (FileInputStream configStream = new FileInputStream(new File(configDir, configFile))) {
-
-
             Properties properties = new Properties();
             properties.putAll(project.getModel().getProperties());
             properties.putAll(project.getProperties());
             properties.putAll(System.getProperties());
             properties.put("project.version", project.getVersion()); //TODO: figure out the correct way to do this
-
             final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(properties)).parse(configStream);
             AetherArtifactFileResolver aetherArtifactFileResolver = new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos);
-            ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
-            if(systemPropertyVersionOverrides) {
-                overrideArtifactResolver = new DelegatingArtifactResolver(new PropertiesBasedArtifactResolver(properties), overrideArtifactResolver);
+            final ArtifactResolver artifactRefsResolver = new MapArtifactResolver(serverProvisioningDescription.getArtifactRefs());
+            final ArtifactResolver mavenResolver = useMavenProjectArtifactResolver ? new MavenProjectArtifactResolver(project) : null;
+            final ArtifactResolver buildArtifactResolver = new DelegatingArtifactResolver(mavenResolver, artifactRefsResolver);
+            ArtifactVersionOverrider artifactVersionOverrider = null;
+            if (systemPropertyVersionOverrides) {
+                artifactVersionOverrider = new PropertiesArtifactVersionOverrider(properties);
+                artifactVersionOverrider.override(buildArtifactResolver);
             }
-
-            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), aetherArtifactFileResolver, overrideArtifactResolver);
+            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), aetherArtifactFileResolver, buildArtifactResolver, artifactVersionOverrider);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

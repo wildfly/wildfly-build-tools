@@ -16,15 +16,10 @@
 
 package org.wildfly.build.provisioning;
 
-import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionXmlWriter;
 
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -50,7 +45,7 @@ public class CreateCommand {
                     if(i == args.length) {
                         printUsageAndExit(1);
                     }
-                    packs.add(new FeaturePack(Artifact.parse(args[i])));
+                    packs.add(new FeaturePack(args[i]));
                     lastCommandPack = true;
                     break;
                 }
@@ -99,32 +94,13 @@ public class CreateCommand {
             for(String subsystem : pack.subsystems) {
                 subsystems.add(new ServerProvisioningDescription.FeaturePack.Subsystem(subsystem, true));
             }
-            description.getFeaturePacks().add(new ServerProvisioningDescription.FeaturePack(pack.name, null, null, null, subsystems));
+            description.getFeaturePacks().add(new ServerProvisioningDescription.FeaturePack(pack.artifact, null, null, null, subsystems));
         }
 
         try {
-            FileOutputStream out = new FileOutputStream(file);
-
-            try {
-                XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(out);
-                ServerProvisioningDescriptionXmlWriter.INSTANCE.writeContent(writer, description);
-                writer.flush();
-                writer.close();
-            } finally {
-                safeClose(out);
-            }
+            ServerProvisioningDescriptionXmlWriter.INSTANCE.writeContent(description, new File(file));
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void safeClose(FileOutputStream out) {
-        if(out != null) {
-            try {
-                out.close();
-            } catch (IOException e) {
-                StandaloneProvisioningLogger.ROOT_LOGGER.debugf("Failed to close %s", out);
-            }
         }
     }
 
@@ -134,11 +110,11 @@ public class CreateCommand {
     }
 
     private static class FeaturePack {
-        final Artifact name;
+        final String artifact;
         final List<String> subsystems = new ArrayList<>();
 
-        private FeaturePack(Artifact name) {
-            this.name = name;
+        private FeaturePack(String artifact) {
+            this.artifact = artifact;
         }
     }
 }

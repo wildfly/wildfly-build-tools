@@ -17,8 +17,8 @@
 package org.wildfly.build.util;
 
 import org.wildfly.build.ArtifactFileResolver;
-import org.wildfly.build.configassembly.SubsystemInputStreamSources;
 import org.wildfly.build.pack.model.Artifact;
+import org.wildfly.build.configassembly.SubsystemInputStreamSources;
 import org.wildfly.build.pack.model.FeaturePack;
 
 import java.io.File;
@@ -111,7 +111,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
         // the subsystem templates are included in module artifacts files
         for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
             // resolve the artifact
-            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifactCoords());
+            Artifact artifact = Artifact.resolve(artifactName.getArtifactCoords(), module.getFeaturePack().getArtifactResolver());
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve module resource artifact " + artifactName.getArtifactCoords() + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
             }
@@ -139,7 +139,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
         // the subsystem templates are included in module artifacts files
         for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
             // resolve the artifact
-            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifactCoords());
+            Artifact artifact = Artifact.resolve(artifactName.getArtifactCoords(), module.getFeaturePack().getArtifactResolver());
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve module resource artifact " + artifactName.getArtifactCoords() + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
             }

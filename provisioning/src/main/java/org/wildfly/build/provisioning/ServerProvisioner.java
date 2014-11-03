@@ -17,6 +17,8 @@
 package org.wildfly.build.provisioning;
 
 import org.jboss.logging.Logger;
+import org.wildfly.build.ArtifactVersionOverrider;
+import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.Locations;
@@ -27,7 +29,6 @@ import org.wildfly.build.common.model.FileFilter;
 import org.wildfly.build.common.model.FilePermission;
 import org.wildfly.build.configassembly.ConfigurationAssembler;
 import org.wildfly.build.configassembly.SubsystemConfig;
-import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.pack.model.FeaturePack;
 import org.wildfly.build.pack.model.FeaturePackFactory;
 import org.wildfly.build.pack.model.ModuleIdentifier;
@@ -76,13 +77,14 @@ public class ServerProvisioner {
 
     private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
 
-    public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+    public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver buildArtifactResolver, ArtifactVersionOverrider artifactVersionOverrider) {
         final ServerProvisioning serverProvisioning = new ServerProvisioning(description);
         final List<String> errors = new ArrayList<>();
         try {
             // create the feature packs
             for (ServerProvisioningDescription.FeaturePack serverProvisioningFeaturePackDescription : description.getFeaturePacks()) {
-                final FeaturePack featurePack = FeaturePackFactory.createPack(serverProvisioningFeaturePackDescription.getArtifact(), artifactFileResolver, versionOverrideArtifactResolver);
+                final Artifact featurePackArtifact = FeaturePack.resolveArtifact(serverProvisioningFeaturePackDescription.getArtifact(), buildArtifactResolver);
+                final FeaturePack featurePack = FeaturePackFactory.createPack(featurePackArtifact, artifactFileResolver, buildArtifactResolver, artifactVersionOverrider);
                 serverProvisioning.getFeaturePacks().add(new ServerProvisioningFeaturePack(serverProvisioningFeaturePackDescription, featurePack, artifactFileResolver));
             }
             // create output dir
@@ -100,7 +102,7 @@ public class ServerProvisioner {
             }
             final Set<String> filesProcessed = new HashSet<>();
             // process server provisioning copy-artifacts
-            processCopyArtifacts(serverProvisioning.getDescription().getCopyArtifacts(), versionOverrideArtifactResolver, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+            processCopyArtifacts(serverProvisioning.getDescription().getCopyArtifacts(), buildArtifactResolver, artifactVersionOverrider, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
             // process modules (needs to be done for all feature packs before any config is processed, due to subsystem template gathering)
             processModules(serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
             // process the server config
@@ -126,7 +128,7 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+    private static void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, ArtifactVersionOverrider artifactVersionOverrider, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         for (CopyArtifact copyArtifact : copyArtifacts) {
             if (!filesProcessed.add(copyArtifact.getToLocation())) {
                 continue;
@@ -137,9 +139,12 @@ public class ServerProvisioner {
                     throw new IOException("Could not create directory " + target.getParentFile());
                 }
             }
-            Artifact artifact = artifactResolver.getArtifact(copyArtifact.getArtifact());
+            Artifact artifact = Artifact.resolve(copyArtifact.getArtifact(), artifactResolver);
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve artifact " + copyArtifact.getArtifact() + " to copy");
+            }
+            if (artifactVersionOverrider != null) {
+                artifactVersionOverrider.override(artifact.getDefaultArtifactRef(), artifact);
             }
             File artifactFile = artifactFileResolver.getArtifactFile(artifact);
             if (artifactFile == null) {
@@ -215,7 +220,7 @@ public class ServerProvisioner {
                         jandex = options.contains("jandex"); //todo: eventually we may need options to have a proper query string type syntax
                         moduleXmlContents = moduleXmlContents.replace(artifactName.toString(), artifactCoords); //todo: all these replace calls are a bit yuck, we may need proper solution if this gets more complex
                     }
-                    Artifact artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
+                    Artifact artifact = Artifact.resolve(artifactCoords, featurePack.getArtifactResolver());
                     if (artifact == null) {
                         throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + featurePack.getFeaturePackFile());
                     }
@@ -360,7 +365,7 @@ public class ServerProvisioner {
     }
 
     private static void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
-        processCopyArtifacts(featurePack.getDescription().getCopyArtifacts(), featurePack.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+        processCopyArtifacts(featurePack.getDescription().getCopyArtifacts(), featurePack.getArtifactResolver(), null, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         for (FeaturePack dependency : featurePack.getDependencies()) {
             processFeaturePackCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         }

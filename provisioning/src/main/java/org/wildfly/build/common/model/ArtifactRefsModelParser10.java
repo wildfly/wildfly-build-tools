@@ -15,6 +15,7 @@
  */
 package org.wildfly.build.common.model;
 
+import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.util.BuildPropertyReplacer;
 import org.wildfly.build.util.xml.ParsingUtils;
 
@@ -24,31 +25,28 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * @author Eduardo Martins
  */
-public class CopyArtifactsModelParser10 {
+public class ArtifactRefsModelParser10 {
 
-    public static final String ELEMENT_LOCAL_NAME = "copy-artifacts";
+    public static final String ELEMENT_LOCAL_NAME = "artifact-refs";
 
     enum Element {
 
         // default unknown element
         UNKNOWN(null),
-        COPY_ARTIFACT("copy-artifact"),
-        FILTER("filter"),
+        ARTIFACT("artifact"),
         ;
 
         private static final Map<String, Element> elements;
 
         static {
             Map<String, Element> elementsMap = new HashMap<>();
-            elementsMap.put(Element.COPY_ARTIFACT.getLocalName(), Element.COPY_ARTIFACT);
-            elementsMap.put(Element.FILTER.getLocalName(), Element.FILTER);
+            elementsMap.put(Element.ARTIFACT.getLocalName(), Element.ARTIFACT);
             elements = elementsMap;
         }
 
@@ -75,20 +73,26 @@ public class CopyArtifactsModelParser10 {
 
     enum Attribute {
 
-        // default unknown attribute
         UNKNOWN(null),
-        ARTIFACT("artifact"),
-        TO_LOCATION("to-location"),
-        EXTRACT("extract"),
+        NAME("name"),
+        // maven artifact attrs
+        ARTIFACT_ID("artifactId"),
+        CLASSIFIER("classifier"),
+        EXTENSION("extension"),
+        GROUP_ID("groupId"),
+        VERSION("version"),
         ;
 
         private static final Map<String, Attribute> attributes;
 
         static {
             Map<String, Attribute> attributesMap = new HashMap<>();
-            attributesMap.put(ARTIFACT.getLocalName(), ARTIFACT);
-            attributesMap.put(TO_LOCATION.getLocalName(), TO_LOCATION);
-            attributesMap.put(EXTRACT.getLocalName(), EXTRACT);
+            attributesMap.put(NAME.getLocalName(), NAME);
+            attributesMap.put(ARTIFACT_ID.getLocalName(), ARTIFACT_ID);
+            attributesMap.put(CLASSIFIER.getLocalName(), CLASSIFIER);
+            attributesMap.put(EXTENSION.getLocalName(), EXTENSION);
+            attributesMap.put(GROUP_ID.getLocalName(), GROUP_ID);
+            attributesMap.put(VERSION.getLocalName(), VERSION);
             attributes = attributesMap;
         }
 
@@ -114,14 +118,12 @@ public class CopyArtifactsModelParser10 {
     }
 
     private final BuildPropertyReplacer propertyReplacer;
-    private final FileFilterModelParser10 fileFilterModelParser;
 
-    public CopyArtifactsModelParser10(BuildPropertyReplacer propertyReplacer, FileFilterModelParser10 fileFilterModelParser) {
+    public ArtifactRefsModelParser10(BuildPropertyReplacer propertyReplacer) {
         this.propertyReplacer = propertyReplacer;
-        this.fileFilterModelParser = fileFilterModelParser;
     }
 
-    public void parseCopyArtifacts(final XMLStreamReader reader, final List<CopyArtifact> result) throws XMLStreamException {
+    public void parseArtifactRefs(final XMLStreamReader reader, final Map<String, Artifact> result) throws XMLStreamException {
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
@@ -130,8 +132,8 @@ public class CopyArtifactsModelParser10 {
                 case XMLStreamConstants.START_ELEMENT: {
                     final Element element = Element.of(reader.getName());
                     switch (element) {
-                        case COPY_ARTIFACT:
-                            parseCopyArtifact(reader, result);
+                        case ARTIFACT:
+                            parseArtifact(reader, result);
                             break;
                         default:
                             throw ParsingUtils.unexpectedContent(reader);
@@ -146,24 +148,36 @@ public class CopyArtifactsModelParser10 {
         throw ParsingUtils.endOfDocument(reader.getLocation());
     }
 
-    private void parseCopyArtifact(XMLStreamReader reader, final List<CopyArtifact> result) throws XMLStreamException {
-        String artifact = null;
-        String location = null;
-        boolean extract = false;
-        final Set<Attribute> required = EnumSet.of(Attribute.ARTIFACT, Attribute.TO_LOCATION);
+    private void parseArtifact(XMLStreamReader reader, final Map<String, Artifact> result) throws XMLStreamException {
         final int count = reader.getAttributeCount();
+        String name = null;
+        String artifactId = null;
+        String version = null;
+        String groupId = null;
+        String classifier = null;
+        String extension = null;
+        final Set<Attribute> required = EnumSet.of(Attribute.NAME, Attribute.ARTIFACT_ID, Attribute.GROUP_ID, Attribute.VERSION);
         for (int i = 0; i < count; i++) {
             final Attribute attribute = Attribute.of(reader.getAttributeName(i));
             required.remove(attribute);
             switch (attribute) {
-                case ARTIFACT:
-                    artifact = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                case NAME:
+                    name = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
                     break;
-                case TO_LOCATION:
-                    location = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                case GROUP_ID:
+                    groupId = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
                     break;
-                case EXTRACT:
-                    extract = Boolean.parseBoolean(propertyReplacer.replaceProperties(reader.getAttributeValue(i)));
+                case ARTIFACT_ID:
+                    artifactId = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                    break;
+                case VERSION:
+                    version = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                    break;
+                case CLASSIFIER:
+                    classifier = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                    break;
+                case EXTENSION:
+                    extension = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
                     break;
                 default:
                     throw ParsingUtils.unexpectedContent(reader);
@@ -172,31 +186,7 @@ public class CopyArtifactsModelParser10 {
         if (!required.isEmpty()) {
             throw ParsingUtils.missingAttributes(reader.getLocation(), required);
         }
-
-        CopyArtifact copyArtifact = new CopyArtifact(artifact, location, extract);
-        result.add(copyArtifact);
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case FILTER:
-                            fileFilterModelParser.parseFilter(reader, copyArtifact.getFilters());
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
+        ParsingUtils.parseNoContent(reader);
+        result.put(name, new Artifact(groupId, artifactId, extension, classifier, version));
     }
-
 }

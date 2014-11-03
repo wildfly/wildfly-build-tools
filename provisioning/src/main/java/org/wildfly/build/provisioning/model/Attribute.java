@@ -37,11 +37,7 @@ enum Attribute {
     USE_TEMPLATE("use-template"),
     NAME("name"),
     VALUE("value"),
-    GROUP_ID("groupId"),
-    ARTIFACT_ID("artifactId"),
-    CLASSIFIER("classifier"),
-    EXTENSION("extension"),
-    VERSION("version"),
+    ARTIFACT("artifact"),
     ;
 
     private static final Map<QName, Attribute> attributes;
@@ -57,11 +53,7 @@ enum Attribute {
         attributesMap.put(new QName(VALUE.getLocalName()), VALUE);
         attributesMap.put(new QName(COPY_MODULE_ARTIFACTS.getLocalName()), COPY_MODULE_ARTIFACTS);
         attributesMap.put(new QName(EXTRACT_SCHEMAS.getLocalName()), EXTRACT_SCHEMAS);
-        attributesMap.put(new QName(GROUP_ID.getLocalName()), GROUP_ID);
-        attributesMap.put(new QName(ARTIFACT_ID.getLocalName()), ARTIFACT_ID);
-        attributesMap.put(new QName(CLASSIFIER.getLocalName()), CLASSIFIER);
-        attributesMap.put(new QName(EXTENSION.getLocalName()), EXTENSION);
-        attributesMap.put(new QName(VERSION.getLocalName()), VERSION);
+        attributesMap.put(new QName(ARTIFACT.getLocalName()), ARTIFACT);
 
 
         attributes = attributesMap;

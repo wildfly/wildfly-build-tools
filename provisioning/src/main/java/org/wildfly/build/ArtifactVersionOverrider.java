@@ -13,29 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.wildfly.build;
 
 import org.wildfly.build.pack.model.Artifact;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
+ * The artifact version overrider is a "build" facility, which is used to override the versions of specific artifacts included in XML descriptors and feature packs.
  * @author Eduardo Martins
  */
-public interface ArtifactResolver {
+public interface ArtifactVersionOverrider {
 
     /**
-     * Retrieves the artifact with the specified artifact name.
+     * Overrides versions of all artifacts in the specified resolver, which the overrider has a different version.
+     * @param artifactResolver
+     */
+    void override(ArtifactResolver artifactResolver);
+
+    /**
+     * Overrides the provided artifact's version, if the overrider has a different version.
      * @param artifactName
-     * @return
+     * @param artifact
      */
-    Artifact getArtifact(String artifactName);
+    void override(String artifactName, Artifact artifact);
 
     /**
-     * Retrieves the set of artifact names known by the resolver.
+     * Retrieves a map containing all artifacts the instance has overridden.
      * @return
      */
-    Set<String> getArtifactNames();
-
+    Map<String, Artifact> getOverriddenArtifacts();
 }

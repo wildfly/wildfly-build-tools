@@ -22,12 +22,14 @@
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
+    <xs:include schemaLocation="wildfly-server-provisioning-common-1_0.xsd"/>
+
     <xs:element name="server-provisioning">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="feature-packs" type="feature-packs-type" minOccurs="0" maxOccurs="1" />
-                <xs:element name="version-overrides" type="version-overrides-type" minOccurs="0" maxOccurs="1" />
                 <xs:element name="copy-artifacts" type="copy-artifacts-type" minOccurs="0" maxOccurs="1" />
+                <xs:element name="artifact-refs" type="artifact-refs-type" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
             <xs:attribute name="copy-module-artifacts" type="xs:boolean" use="optional" />
             <xs:attribute name="extract-schemas" type="xs:boolean" use="optional" />
@@ -49,11 +51,7 @@
             <xs:element name="modules" type="feature-pack-modules-type" minOccurs="0" maxOccurs="1" />
             <xs:element name="contents" type="feature-pack-contents-type" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
-        <xs:attribute name="groupId" type="xs:string" use="required"/>
-        <xs:attribute name="artifactId" type="xs:string" use="required"/>
-        <xs:attribute name="classifier" type="xs:string" use="optional"/>
-        <xs:attribute name="extension" type="xs:string" use="optional"/>
-        <xs:attribute name="version" type="xs:string" use="required"/>
+        <xs:attribute name="artifact" type="artifact-name-type" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="feature-pack-modules-type">
@@ -76,16 +74,13 @@
     </xs:complexType>
     <xs:complexType name="feature-pack-config-file-type">
         <xs:sequence>
-            <xs:element name="property" type="feature-pack-config-file-property-type" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="property" type="property-type" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="subsystems" type="feature-pack-config-file-subsystems-type" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="output-file" use="required" type="xs:string" />
         <xs:attribute name="use-template" use="optional" type="xs:boolean" />
     </xs:complexType>
-    <xs:complexType name="feature-pack-config-file-property-type">
-        <xs:attribute name="name" use="required" type="xs:string"/>
-        <xs:attribute name="value" use="required" type="xs:string"/>
-    </xs:complexType>
+
     <xs:complexType name="feature-pack-config-file-subsystems-type">
         <xs:sequence>
             <xs:element name="subsystem" type="feature-pack-config-file-subsystem-type" minOccurs="0" maxOccurs="unbounded"/>
@@ -116,37 +111,6 @@
     <xs:complexType name="feature-pack-subsystem-type">
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="transitive" type="xs:boolean" use="optional" default="false"/>
-    </xs:complexType>
-
-    <xs:complexType name="version-overrides-type">
-        <xs:sequence>
-            <xs:element name="version-override" type="artifact-type" maxOccurs="unbounded" minOccurs="0" />
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="artifact-type">
-        <xs:attribute name="groupId" type="xs:string" use="required"/>
-        <xs:attribute name="artifactId" type="xs:string" use="required"/>
-        <xs:attribute name="classifier" type="xs:string" use="optional"/>
-        <xs:attribute name="extension" type="xs:string" use="optional"/>
-        <xs:attribute name="version" type="xs:string" use="required"/>
-    </xs:complexType>
-
-    <xs:complexType name="copy-artifacts-type">
-        <xs:sequence>
-            <xs:element name="copy-artifact" type="copy-artifact-type" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="copy-artifact-type">
-        <xs:sequence>
-            <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="artifact" />
-        <xs:attribute name="to-location" />
-        <xs:attribute name="extract" use="optional" default="false" />
-    </xs:complexType>
-    <xs:complexType name="filter-type">
-        <xs:attribute name="pattern" type="xs:string" use="required" />
-        <xs:attribute name="include" type="xs:boolean" use="required" />
     </xs:complexType>
 
 </xs:schema>

@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.wildfly.build;
 
-import org.wildfly.build.pack.model.Artifact;
-
-import java.io.File;
-
 /**
- * @author Stuart Douglas
+ * Properties which customize all build behaviours.
  * @author Eduardo Martins
  */
-public interface ArtifactFileResolver {
+public class BuildProperties {
 
     /**
-     *
-     * @param artifact
-     * @return
+     * indicates if a maven project's artifacts should be included in artifact resolving
      */
-    File getArtifactFile(Artifact artifact);
+    public static final String USE_MAVEN_PROJECT_ARTIFACT_RESOLVER = "use-maven-project-artifact-resolver";
+
+    /**
+     * indicates if system properties should be allowed to override artifact versions
+     */
+    public static final String SYSTEM_PROPERTIES_VERSION_OVERRIDES = "system-property-version-overrides";
 }

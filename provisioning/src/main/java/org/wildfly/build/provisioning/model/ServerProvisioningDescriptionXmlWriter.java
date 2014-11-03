@@ -13,23 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.wildfly.build.provisioning.model;
 
 import org.jboss.staxmapper.XMLElementWriter;
 import org.jboss.staxmapper.XMLExtendedStreamWriter;
 import org.jboss.staxmapper.XMLMapper;
+import org.wildfly.build.common.model.ArtifactRefsXMLWriter10;
+import org.wildfly.build.common.model.CopyArtifactsXMLWriter10;
+import org.wildfly.build.util.xml.AttributeValue;
+import org.wildfly.build.util.xml.ElementNode;
 
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 /**
+ * Writes a {@link ServerProvisioningDescription} as XML.
+ *
  * @author Stuart Douglas
+ * @author Eduardo Martins
  */
 public class ServerProvisioningDescriptionXmlWriter implements XMLElementWriter<ServerProvisioningDescription> {
 
-    public static ServerProvisioningDescriptionXmlWriter INSTANCE = new ServerProvisioningDescriptionXmlWriter();
+    public static final ServerProvisioningDescriptionXmlWriter INSTANCE = new ServerProvisioningDescriptionXmlWriter();
 
+    private ServerProvisioningDescriptionXmlWriter() {
+    }
 
     public void writeContent(XMLStreamWriter streamWriter, ServerProvisioningDescription value) throws XMLStreamException {
         final XMLMapper mapper = XMLMapper.Factory.create();
@@ -38,42 +51,51 @@ public class ServerProvisioningDescriptionXmlWriter implements XMLElementWriter<
 
     @Override
     public void writeContent(XMLExtendedStreamWriter streamWriter, ServerProvisioningDescription value) throws XMLStreamException {
+        final ElementNode rootElementNode = new ElementNode(null, Element.SERVER_PROVISIONING.getLocalName(), ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0);
+        processFeaturePacks(value.getFeaturePacks(), rootElementNode);
+        ArtifactRefsXMLWriter10.INSTANCE.write(value.getArtifactRefs(), rootElementNode);
+        CopyArtifactsXMLWriter10.INSTANCE.write(value.getCopyArtifacts(), rootElementNode);
         streamWriter.writeStartDocument();
-        streamWriter.writeStartElement(Element.SERVER_PROVISIONING.getLocalName());
-        streamWriter.writeDefaultNamespace(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0);
-        streamWriter.writeStartElement(Element.FEATURE_PACKS.getLocalName());
-        for(ServerProvisioningDescription.FeaturePack pack : value.getFeaturePacks()) {
-            writeFeaturePack(pack, streamWriter);
-        }
-        streamWriter.writeEndElement();
-        streamWriter.writeEndElement();
+        rootElementNode.marshall(streamWriter);
         streamWriter.writeEndDocument();
     }
 
-    private void writeFeaturePack(ServerProvisioningDescription.FeaturePack pack, XMLExtendedStreamWriter streamWriter) throws XMLStreamException {
-        streamWriter.writeStartElement(Element.FEATURE_PACK.getLocalName());
-        streamWriter.writeAttribute(Attribute.GROUP_ID.getLocalName(), pack.getArtifact().getGACE().getGroupId());
-        streamWriter.writeAttribute(Attribute.ARTIFACT_ID.getLocalName(), pack.getArtifact().getGACE().getArtifactId());
-        streamWriter.writeAttribute(Attribute.VERSION.getLocalName(), pack.getArtifact().getVersion());
-        if(pack.getArtifact().getGACE().getExtension() != null) {
-            streamWriter.writeAttribute(Attribute.EXTENSION.getLocalName(), pack.getArtifact().getGACE().getExtension());
-        }
-        if(pack.getArtifact().getGACE().getClassifier() != null) {
-            streamWriter.writeAttribute(Attribute.CLASSIFIER.getLocalName(), pack.getArtifact().getGACE().getClassifier());
-        }
-
-        if(!pack.getSubsystems().isEmpty()) {
-            streamWriter.writeStartElement(Element.SUBSYSTEMS.getLocalName());
-            for(ServerProvisioningDescription.FeaturePack.Subsystem subsystem : pack.getSubsystems()) {
-                streamWriter.writeStartElement(Element.SUBSYSTEM.getLocalName());
-                streamWriter.writeAttribute(Attribute.NAME.getLocalName(), subsystem.getName());
-                streamWriter.writeAttribute(Attribute.TRANSITIVE.getLocalName(), Boolean.toString(subsystem.isTransitive()));
-
-                streamWriter.writeEndElement();
+    public void writeContent(ServerProvisioningDescription value, File outputFile) throws XMLStreamException, IOException {
+        try (FileOutputStream out = new FileOutputStream(outputFile)){
+            final XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(out);
+            try {
+                writeContent(writer, value);
+            } finally {
+                try {
+                    writer.close();
+                } catch (Exception ignore) {
+                }
             }
-            streamWriter.writeEndElement();
+        } catch (Exception e) {
+            throw new IOException(e);
         }
+    }
 
-        streamWriter.writeEndElement();
+    protected void processFeaturePacks(List<ServerProvisioningDescription.FeaturePack> featurePacks, ElementNode parentElementNode) {
+        if (!featurePacks.isEmpty()) {
+            final ElementNode featurePacksElementNode = new ElementNode(parentElementNode, Element.FEATURE_PACKS.getLocalName());
+            for (ServerProvisioningDescription.FeaturePack featurePack : featurePacks) {
+                final ElementNode featurePackElementNode = new ElementNode(featurePacksElementNode, Element.FEATURE_PACK.getLocalName());
+                featurePackElementNode.addAttribute(Attribute.ARTIFACT.getLocalName(), new AttributeValue(featurePack.getArtifact()));
+                if(!featurePack.getSubsystems().isEmpty()) {
+                    final ElementNode subsystemsElementNode = new ElementNode(featurePackElementNode, Element.SUBSYSTEMS.getLocalName());
+                    for(ServerProvisioningDescription.FeaturePack.Subsystem subsystem : featurePack.getSubsystems()) {
+                        final ElementNode subsystemElementNode = new ElementNode(subsystemsElementNode, Element.SUBSYSTEM.getLocalName());
+                        subsystemElementNode.addAttribute(Attribute.NAME.getLocalName(), new AttributeValue(subsystem.getName()));
+                        subsystemElementNode.addAttribute(Attribute.TRANSITIVE.getLocalName(), new AttributeValue(Boolean.toString(subsystem.isTransitive())));
+                        subsystemsElementNode.addChild(subsystemElementNode);
+                    }
+                    featurePackElementNode.addChild(subsystemsElementNode);
+                }
+                // TODO implement writing of remaining inner elements
+                featurePacksElementNode.addChild(featurePackElementNode);
+            }
+            parentElementNode.addChild(featurePacksElementNode);
+        }
     }
 }

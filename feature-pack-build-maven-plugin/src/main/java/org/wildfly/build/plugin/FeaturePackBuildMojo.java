@@ -29,7 +29,13 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.wildfly.build.AetherArtifactFileResolver;
+import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.ArtifactVersionOverrider;
+import org.wildfly.build.BuildProperties;
+import org.wildfly.build.pack.model.DelegatingArtifactResolver;
 import org.wildfly.build.Locations;
+import org.wildfly.build.util.MapArtifactResolver;
+import org.wildfly.build.util.PropertiesArtifactVersionOverrider;
 import org.wildfly.build.featurepack.FeaturePackBuilder;
 import org.wildfly.build.featurepack.model.FeaturePackBuild;
 import org.wildfly.build.featurepack.model.FeaturePackBuildModelParser;
@@ -104,6 +110,12 @@ public class FeaturePackBuildMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
 
+    @Parameter(alias = BuildProperties.USE_MAVEN_PROJECT_ARTIFACT_RESOLVER, defaultValue = "true", readonly = true)
+    private Boolean useMavenProjectArtifactResolver = true;
+
+    @Parameter(alias = BuildProperties.SYSTEM_PROPERTIES_VERSION_OVERRIDES, defaultValue = "false", readonly = true)
+    private Boolean systemPropertyVersionOverrides = false;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         copyContents();
@@ -114,7 +126,15 @@ public class FeaturePackBuildMojo extends AbstractMojo {
             properties.put("project.version", project.getVersion()); //TODO: figure out the correct way to do this
             final FeaturePackBuild build = new FeaturePackBuildModelParser(new MapPropertyResolver(properties)).parse(configStream);
             File target = new File(buildName, serverName);
-            FeaturePackBuilder.build(build, target, new MavenProjectArtifactResolver(project), new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos));
+            final ArtifactResolver artifactRefsResolver = new MapArtifactResolver(build.getArtifactRefs());
+            final ArtifactResolver mavenResolver = useMavenProjectArtifactResolver ? new MavenProjectArtifactResolver(project) : null;
+            final ArtifactResolver buildArtifactResolver = new DelegatingArtifactResolver(mavenResolver, artifactRefsResolver);
+            ArtifactVersionOverrider artifactVersionOverrider = null;
+            if (systemPropertyVersionOverrides) {
+                artifactVersionOverrider = new PropertiesArtifactVersionOverrider(properties);
+                artifactVersionOverrider.override(buildArtifactResolver);
+            }
+            FeaturePackBuilder.build(build, target, buildArtifactResolver, new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos), artifactVersionOverrider);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

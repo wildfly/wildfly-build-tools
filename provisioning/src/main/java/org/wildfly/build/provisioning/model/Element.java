@@ -16,6 +16,7 @@
 
 package org.wildfly.build.provisioning.model;
 
+import org.wildfly.build.common.model.ArtifactRefsModelParser10;
 import org.wildfly.build.common.model.CopyArtifactsModelParser10;
 import org.wildfly.build.common.model.FileFilterModelParser10;
 
@@ -34,7 +35,6 @@ enum Element {
     SERVER_PROVISIONING("server-provisioning"),
     FEATURE_PACKS("feature-packs"),
     FEATURE_PACK("feature-pack"),
-    ARTIFACT("artifact"),
     MODULES("modules"),
     CONFIG("config"),
     STANDALONE("standalone"),
@@ -43,8 +43,7 @@ enum Element {
     SUBSYSTEMS("subsystems"),
     SUBSYSTEM("subsystem"),
     CONTENTS("contents"),
-    VERSION_OVERRIDES("version-overrides"),
-    VERSION_OVERRIDE("version-override"),
+    ARTIFACT_REFS(ArtifactRefsModelParser10.ELEMENT_LOCAL_NAME),
     COPY_ARTIFACTS(CopyArtifactsModelParser10.ELEMENT_LOCAL_NAME),
     FILTER(FileFilterModelParser10.ELEMENT_LOCAL_NAME),
     ;
@@ -56,7 +55,6 @@ enum Element {
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, SERVER_PROVISIONING.getLocalName()), SERVER_PROVISIONING);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, FEATURE_PACKS.getLocalName()), FEATURE_PACKS);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, FEATURE_PACK.getLocalName()), FEATURE_PACK);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, ARTIFACT.getLocalName()), ARTIFACT);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, MODULES.getLocalName()), MODULES);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, FILTER.getLocalName()), FILTER);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, CONFIG.getLocalName()), CONFIG);
@@ -66,8 +64,7 @@ enum Element {
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, SUBSYSTEMS.getLocalName()), SUBSYSTEMS);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, SUBSYSTEM.getLocalName()), SUBSYSTEM);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, CONTENTS.getLocalName()), CONTENTS);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, VERSION_OVERRIDES.getLocalName()), VERSION_OVERRIDES);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, VERSION_OVERRIDE.getLocalName()), VERSION_OVERRIDE);
+        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, ARTIFACT_REFS.getLocalName()), ARTIFACT_REFS);
         elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, COPY_ARTIFACTS.getLocalName()), COPY_ARTIFACTS);
         elements = elementsMap;
     }

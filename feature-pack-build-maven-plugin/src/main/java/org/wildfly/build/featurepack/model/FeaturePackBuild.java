@@ -16,13 +16,16 @@
 
 package org.wildfly.build.featurepack.model;
 
+import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.common.model.Config;
 import org.wildfly.build.common.model.CopyArtifact;
 import org.wildfly.build.common.model.FileFilter;
 import org.wildfly.build.common.model.FilePermission;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Representation of the feature pack build config
@@ -38,6 +41,11 @@ public class FeaturePackBuild {
     private final List<String> mkDirs = new ArrayList<>();
     private final List<FileFilter> windows = new ArrayList<>();
     private final List<FileFilter> unix = new ArrayList<>();
+    private final Map<String, Artifact> artifactRefs = new HashMap<>();
+
+    public Map<String, Artifact> getArtifactRefs() {
+        return artifactRefs;
+    }
 
     public List<String> getDependencies() {
         return dependencies;

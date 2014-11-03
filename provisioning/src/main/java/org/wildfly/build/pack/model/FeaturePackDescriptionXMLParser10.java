@@ -18,6 +18,7 @@ package org.wildfly.build.pack.model;
 
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.wildfly.build.common.model.ArtifactRefsModelParser10;
 import org.wildfly.build.common.model.ConfigModelParser10;
 import org.wildfly.build.common.model.CopyArtifactsModelParser10;
 import org.wildfly.build.common.model.FileFilterModelParser10;
@@ -54,8 +55,7 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
 
         FEATURE_PACK("feature-pack"),
         DEPENDENCIES("dependencies"),
-        ARTIFACT("artifact"),
-        ARTIFACT_VERSIONS("artifact-versions"),
+        ARTIFACT_REFS(ArtifactRefsModelParser10.ELEMENT_LOCAL_NAME),
         CONFIG(ConfigModelParser10.ELEMENT_LOCAL_NAME),
         COPY_ARTIFACTS(CopyArtifactsModelParser10.ELEMENT_LOCAL_NAME),
         FILTER(FileFilterModelParser10.ELEMENT_LOCAL_NAME),
@@ -68,8 +68,7 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
             Map<QName, Element> elementsMap = new HashMap<QName, Element>();
             elementsMap.put(new QName(NAMESPACE_1_0, Element.FEATURE_PACK.getLocalName()), Element.FEATURE_PACK);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.DEPENDENCIES.getLocalName()), Element.DEPENDENCIES);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT.getLocalName()), Element.ARTIFACT);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT_VERSIONS.getLocalName()), Element.ARTIFACT_VERSIONS);
+            elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT_REFS.getLocalName()), Element.ARTIFACT_REFS);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.CONFIG.getLocalName()), Element.CONFIG);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.COPY_ARTIFACTS.getLocalName()), Element.COPY_ARTIFACTS);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.FILTER.getLocalName()), Element.FILTER);
@@ -108,24 +107,14 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
 
         // default unknown attribute
         UNKNOWN(null),
-        GROUP_ID("groupId"),
-        ARTIFACT_ID("artifactId"),
-        CLASSIFIER("classifier"),
-        EXTENSION("extension"),
-        VERSION("version"),
-        NAME("name"),
+        ARTIFACT("artifact"),
         ;
 
         private static final Map<QName, Attribute> attributes;
 
         static {
             Map<QName, Attribute> attributesMap = new HashMap<QName, Attribute>();
-            attributesMap.put(new QName(GROUP_ID.getLocalName()), GROUP_ID);
-            attributesMap.put(new QName(ARTIFACT_ID.getLocalName()), ARTIFACT_ID);
-            attributesMap.put(new QName(CLASSIFIER.getLocalName()), CLASSIFIER);
-            attributesMap.put(new QName(EXTENSION.getLocalName()), EXTENSION);
-            attributesMap.put(new QName(VERSION.getLocalName()), VERSION);
-            attributesMap.put(new QName(NAME.getLocalName()), NAME);
+            attributesMap.put(new QName(ARTIFACT.getLocalName()), ARTIFACT);
             attributes = attributesMap;
         }
 
@@ -154,11 +143,13 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
     private final ConfigModelParser10 configModelParser;
     private final CopyArtifactsModelParser10 copyArtifactsModelParser;
     private final FilePermissionsModelParser10 filePermissionsModelParser;
+    private final ArtifactRefsModelParser10 artifactRefsModelParser;
 
     FeaturePackDescriptionXMLParser10(PropertyResolver resolver) {
         this.propertyReplacer = new BuildPropertyReplacer(resolver);
         this.configModelParser = new ConfigModelParser10(this.propertyReplacer);
         FileFilterModelParser10 fileFilterModelParser = new FileFilterModelParser10(this.propertyReplacer);
+        this.artifactRefsModelParser = new ArtifactRefsModelParser10(this.propertyReplacer);
         this.copyArtifactsModelParser = new CopyArtifactsModelParser10(this.propertyReplacer, fileFilterModelParser);
         this.filePermissionsModelParser = new FilePermissionsModelParser10(this.propertyReplacer, fileFilterModelParser);
     }
@@ -187,8 +178,8 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
                         case DEPENDENCIES:
                             parseDependencies(reader, result);
                             break;
-                        case ARTIFACT_VERSIONS:
-                            parseArtifactVersions(reader, result);
+                        case ARTIFACT_REFS:
+                            artifactRefsModelParser.parseArtifactRefs(reader, result.getArtifactRefs());
                             break;
                         case CONFIG:
                             configModelParser.parseConfig(reader, result.getConfig());
@@ -221,8 +212,8 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
                 case XMLStreamConstants.START_ELEMENT: {
                     final Element element = Element.of(reader.getName());
                     switch (element) {
-                        case ARTIFACT:
-                            result.getDependencies().add(parseName(reader));
+                        case FEATURE_PACK:
+                            result.getDependencies().add(parseDependencyArtifact(reader));
                             break;
                         default:
                             throw ParsingUtils.unexpectedContent(reader);
@@ -237,15 +228,15 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
         throw ParsingUtils.endOfDocument(reader.getLocation());
     }
 
-    private String parseName(final XMLStreamReader reader) throws XMLStreamException {
+    private String parseDependencyArtifact(final XMLStreamReader reader) throws XMLStreamException {
         final int count = reader.getAttributeCount();
         String name = null;
-        final Set<Attribute> required = EnumSet.of(Attribute.NAME);
+        final Set<Attribute> required = EnumSet.of(Attribute.ARTIFACT);
         for (int i = 0; i < count; i++) {
             final Attribute attribute = Attribute.of(reader.getAttributeName(i));
             required.remove(attribute);
             switch (attribute) {
-                case NAME:
+                case ARTIFACT:
                     name = reader.getAttributeValue(i);
                     break;
                 default:
@@ -257,70 +248,6 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
         }
         ParsingUtils.parseNoContent(reader);
         return propertyReplacer.replaceProperties(name);
-    }
-
-    private void parseArtifactVersions(final XMLStreamReader reader, final FeaturePackDescription result) throws XMLStreamException {
-        final Set<Artifact> artifactVersions = result.getArtifactVersions();
-        while (reader.hasNext()) {
-            switch (reader.nextTag()) {
-                case XMLStreamConstants.END_ELEMENT: {
-                    return;
-                }
-                case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
-                    switch (element) {
-                        case ARTIFACT:
-                            artifactVersions.add(parseArtifact(reader));
-                            break;
-                        default:
-                            throw ParsingUtils.unexpectedContent(reader);
-                    }
-                    break;
-                }
-                default: {
-                    throw ParsingUtils.unexpectedContent(reader);
-                }
-            }
-        }
-        throw ParsingUtils.endOfDocument(reader.getLocation());
-    }
-
-    private Artifact parseArtifact(final XMLStreamReader reader) throws XMLStreamException {
-        final int count = reader.getAttributeCount();
-        String groupId = null;
-        String artifactId = null;
-        String version = null;
-        String classifier = null;
-        String extension = null;
-        final Set<Attribute> required = EnumSet.of(Attribute.GROUP_ID, Attribute.ARTIFACT_ID, Attribute.VERSION);
-        for (int i = 0; i < count; i++) {
-            final Attribute attribute = Attribute.of(reader.getAttributeName(i));
-            required.remove(attribute);
-            switch (attribute) {
-                case GROUP_ID:
-                    groupId = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case ARTIFACT_ID:
-                    artifactId = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case VERSION:
-                    version = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case CLASSIFIER:
-                    classifier = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                case EXTENSION:
-                    extension = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
-                    break;
-                default:
-                    throw ParsingUtils.unexpectedContent(reader);
-            }
-        }
-        if (!required.isEmpty()) {
-            throw ParsingUtils.missingAttributes(reader.getLocation(), required);
-        }
-        ParsingUtils.parseNoContent(reader);
-        return new Artifact(groupId, artifactId, classifier, extension, version);
     }
 
 }

@@ -16,196 +16,156 @@
 
 package org.wildfly.build.pack.model;
 
-import org.wildfly.build.logger.ProvisioningLogger;
+import org.wildfly.build.ArtifactResolver;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Eduardo Martins
  */
-public class Artifact implements Comparable<Artifact> {
+public class Artifact {
 
-    private final GACE GACE;
+    private static final Pattern fromStringPattern = Pattern.compile("([^: ]+):([^: ]+)(:([^: ]*)(:([^: ]+))?)?:([^: ]+)");
 
+    private String groupId;
+    private String artifactId;
+    private String classifier;
+    private String extension;
     private String version;
 
-    public Artifact(String groupId, String artifactId, String classifier, String extension, String version) {
-        this(new GACE(groupId, artifactId, classifier, extension), version);
+    public Artifact(String groupId, String artifactId, String version) {
+        this(groupId, artifactId, null, null, version);
     }
 
-    public Artifact(GACE GACE, String version) {
-        if (GACE == null) {
-            throw new IllegalArgumentException("null gac");
-        }
-        this.GACE = GACE;
-        if (version == null) {
-            throw new IllegalArgumentException("null version");
-        }
-        this.version = version;
+    public Artifact(String groupId, String artifactId, String extension, String classifier, String version) {
+        setGroupId(groupId);
+        setArtifactId(artifactId);
+        setVersion(version);
+        setClassifier(classifier);
+        setExtension(extension);
     }
 
-    public GACE getGACE() {
-        return GACE;
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public Artifact setGroupId(String groupId) {
+        if (groupId == null) {
+            throw new IllegalArgumentException("null groupId");
+        }
+        this.groupId = groupId;
+        return this;
+    }
+
+    public String getArtifactId() {
+        return artifactId;
+    }
+
+    public Artifact setArtifactId(String artifactId) {
+        if (artifactId == null) {
+            throw new IllegalArgumentException("null artifactId");
+        }
+        this.artifactId = artifactId;
+        return this;
+    }
+
+    public String getClassifier() {
+        return classifier;
+    }
+
+    public Artifact setClassifier(String classifier) {
+        if (classifier != null && !classifier.isEmpty()) {
+            this.classifier = classifier;
+        } else {
+            this.classifier = null;
+        }
+        return this;
+    }
+
+    public String getExtension() {
+        return extension;
+    }
+
+    public Artifact setExtension(String extension) {
+        if (extension != null && !extension.equals("jar")) {
+            this.extension = extension;
+        } else {
+            this.extension = null;
+        }
+        return this;
     }
 
     public String getVersion() {
         return version;
     }
 
-    public void setVersion(String version) {
+    public Artifact setVersion(String version) {
+        if (version == null) {
+            throw new IllegalArgumentException("null version");
+        }
         this.version = version;
-    }
-
-    public static Artifact parse(String description) {
-        String[] parts = description.split(":");
-        if(parts.length != 3) {
-            throw ProvisioningLogger.ROOT_LOGGER.cannotParseArtifact(description);
-        }
-        //TODO: do this properly
-        return new Artifact(parts[0], parts[1], null, "jar", parts[2]);
+        return this;
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Artifact artifact = (Artifact) o;
-
-        if (!GACE.equals(artifact.GACE)) return false;
-        if (!version.equals(artifact.version)) return false;
-
-        return true;
+    public String toString() {
+        return new StringBuilder(getDefaultArtifactRef()).append(':').append(version).toString();
     }
 
-    @Override
-    public int hashCode() {
-        int result = GACE.hashCode();
-        result = 31 * result + version.hashCode();
-        return result;
+    public String getDefaultArtifactRef() {
+        final StringBuilder sb = new StringBuilder(groupId).append(':').append(artifactId);
+        if (extension != null && !extension.isEmpty()) {
+            sb.append(':').append(extension);
+        }
+        if (classifier != null && !classifier.isEmpty()) {
+            sb.append(':').append(classifier);
+        }
+        return sb.toString();
     }
 
-    @Override
-    public int compareTo(Artifact o) {
-        int result = GACE.compareTo(o.GACE);
-        if (result == 0) {
-            result = version.compareTo(o.version);
+    /**
+     * Creates a new artifact with the specified artifact name. If not specified in the artifact name, the
+     * artifact's extension defaults to {@code jar} and classifier to an empty string.
+     *
+     * @param artifactName The artifactName coordinates in the format
+     *            {@code <groupId>:<artifactId>[:<extension>[:<classifier>]]:<version>}, must not be {@code null}.
+     * @return the artifact that results from parsing the specified name; null if the artifact name format is invalid.
+     */
+    public static Artifact fromString(String artifactName) {
+        Matcher m = fromStringPattern.matcher(artifactName);
+        if (!m.matches()) {
+            return null;
         }
-        return result;
+        String groupId = m.group(1);
+        String artifactId = m.group(2);
+        String extension = m.group(4);
+        String classifier = m.group(6);
+        String version = m.group(7);
+        return new Artifact(groupId, artifactId, extension, classifier, version);
     }
 
-    public static class GACE implements Comparable<GACE> {
-
-        private final String groupId;
-        private final String artifactId;
-        private final String classifier;
-        private final String extension;
-
-        public GACE(String groupId, String artifactId, String classifier, String extension) {
-            if (groupId == null) {
-                throw new IllegalArgumentException("null groupId");
-            }
-            this.groupId = groupId;
-            if (artifactId == null) {
-                throw new IllegalArgumentException("null artifactId");
-            }
-            this.artifactId = artifactId;
-            if (classifier != null && !classifier.isEmpty()) {
-                this.classifier = classifier;
-            } else {
-                this.classifier = null;
-            }
-            if (extension != null && !extension.equals("jar")) {
-                this.extension = extension;
-            } else {
-                this.extension = null;
-            }
-        }
-
-        public String getGroupId() {
-            return groupId;
-        }
-
-        public String getArtifactId() {
-            return artifactId;
-        }
-
-        public String getClassifier() {
-            return classifier;
-        }
-
-        public String getExtension() {
-            return extension;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            GACE GACE = (GACE) o;
-
-            if (!groupId.equals(GACE.groupId)) return false;
-            if (!artifactId.equals(GACE.artifactId)) return false;
-            if (classifier != null ? !classifier.equals(GACE.classifier) : GACE.classifier != null) return false;
-            if (extension != null ? !extension.equals(GACE.extension) : GACE.extension != null) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = groupId.hashCode();
-            result = 31 * result + artifactId.hashCode();
-            result = 31 * result + (classifier != null ? classifier.hashCode() : 0);
-            result = 31 * result + (extension != null ? extension.hashCode() : 0);
-            return result;
-        }
-
-        @Override
-        public int compareTo(GACE o) {
-            // compare groupIds
-            int result = groupId.compareTo(o.groupId);
-            if (result == 0) {
-                // groupIds are the same, compare artifactIds
-                result = artifactId.compareTo(o.artifactId);
-                if (result == 0) {
-                    // artifactIds are the same, compare classifiers
-                    if (classifier != null) {
-                        if (o.classifier == null) {
-                            result = 1;
-                        } else {
-                            result = classifier.compareTo(o.classifier);
-                        }
-                    } else {
-                        if (o.classifier != null) {
-                            result = -1;
-                        }
-                    }
-                    if (result == 0) {
-                        // classifiers are the same, compare extensions
-                        if (extension != null) {
-                            if (o.extension == null) {
-                                result = 1;
-                            } else {
-                                result = extension.compareTo(o.extension);
-                            }
-                        } else {
-                            if (o.extension != null) {
-                                result = -1;
-                            }
-                        }
-                    }
+    /**
+     * Tries to resolve the artifact using the specified resolver, if that fails this method will try to build an artifact from the specified name.
+     * @param artifactName
+     * @param artifactResolver
+     * @return
+     */
+    public static Artifact resolve(String artifactName, ArtifactResolver artifactResolver) {
+        Artifact resolvedArtifact = artifactResolver.getArtifact(artifactName);
+        if (resolvedArtifact == null) {
+            // not found in resolver, try build from provided name
+            final Artifact fromStringArtifact = Artifact.fromString(artifactName);
+            if (fromStringArtifact != null) {
+                // the artifact can be built from the provided name, retry resolver, this time using the standard artifact ref name
+                resolvedArtifact = artifactResolver.getArtifact(fromStringArtifact.getDefaultArtifactRef());
+                if (resolvedArtifact == null) {
+                    // still not found in resolver, return the artifact built from string
+                    resolvedArtifact = fromStringArtifact;
                 }
             }
-            return result;
         }
-
-        @Override
-        public String toString() {
-            StringBuilder sb = new StringBuilder(groupId).append(':').append(artifactId);
-            if (classifier != null) {
-                sb.append("::").append(classifier);
-            }
-            return sb.toString();
-        }
+        return resolvedArtifact;
     }
+
 }

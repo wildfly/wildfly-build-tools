@@ -18,6 +18,7 @@ package org.wildfly.build.featurepack.model;
 
 import org.jboss.staxmapper.XMLElementReader;
 import org.jboss.staxmapper.XMLExtendedStreamReader;
+import org.wildfly.build.common.model.ArtifactRefsModelParser10;
 import org.wildfly.build.common.model.ConfigModelParser10;
 import org.wildfly.build.common.model.CopyArtifactsModelParser10;
 import org.wildfly.build.common.model.FileFilter;
@@ -56,8 +57,9 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
 
         BUILD("build"),
         DEPENDENCIES("dependencies"),
-        ARTIFACT("artifact"),
+        FEATURE_PACK("feature-pack"),
         CONFIG(ConfigModelParser10.ELEMENT_LOCAL_NAME),
+        ARTIFACT_REFS(ArtifactRefsModelParser10.ELEMENT_LOCAL_NAME),
         COPY_ARTIFACTS(CopyArtifactsModelParser10.ELEMENT_LOCAL_NAME),
         FILTER(FileFilterModelParser10.ELEMENT_LOCAL_NAME),
         FILE_PERMISSIONS(FilePermissionsModelParser10.ELEMENT_LOCAL_NAME),
@@ -73,8 +75,9 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
             Map<QName, Element> elementsMap = new HashMap<QName, Element>();
             elementsMap.put(new QName(NAMESPACE_1_0, Element.BUILD.getLocalName()), Element.BUILD);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.DEPENDENCIES.getLocalName()), Element.DEPENDENCIES);
-            elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT.getLocalName()), Element.ARTIFACT);
+            elementsMap.put(new QName(NAMESPACE_1_0, Element.FEATURE_PACK.getLocalName()), Element.FEATURE_PACK);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.CONFIG.getLocalName()), Element.CONFIG);
+            elementsMap.put(new QName(NAMESPACE_1_0, Element.ARTIFACT_REFS.getLocalName()), Element.ARTIFACT_REFS);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.COPY_ARTIFACTS.getLocalName()), Element.COPY_ARTIFACTS);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.FILTER.getLocalName()), Element.FILTER);
             elementsMap.put(new QName(NAMESPACE_1_0, Element.FILE_PERMISSIONS.getLocalName()), Element.FILE_PERMISSIONS);
@@ -117,6 +120,7 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
 
         // default unknown attribute
         UNKNOWN(null),
+        ARTIFACT("artifact"),
         NAME("name"),
         ;
 
@@ -124,6 +128,7 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
 
         static {
             Map<QName, Attribute> attributesMap = new HashMap<QName, Attribute>();
+            attributesMap.put(new QName(ARTIFACT.getLocalName()), ARTIFACT);
             attributesMap.put(new QName(NAME.getLocalName()), NAME);
             attributes = attributesMap;
         }
@@ -154,11 +159,13 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
     private final CopyArtifactsModelParser10 copyArtifactsModelParser;
     private final FileFilterModelParser10 fileFilterModelParser;
     private final FilePermissionsModelParser10 filePermissionsModelParser;
+    private final ArtifactRefsModelParser10 artifactRefsModelParser;
 
     FeaturePackBuildModelParser10(PropertyResolver resolver) {
         this.propertyReplacer = new BuildPropertyReplacer(resolver);
         this.configModelParser = new ConfigModelParser10(this.propertyReplacer);
         this.fileFilterModelParser = new FileFilterModelParser10(this.propertyReplacer);
+        this.artifactRefsModelParser = new ArtifactRefsModelParser10(this.propertyReplacer);
         this.copyArtifactsModelParser = new CopyArtifactsModelParser10(this.propertyReplacer, this.fileFilterModelParser);
         this.filePermissionsModelParser = new FilePermissionsModelParser10(this.propertyReplacer, this.fileFilterModelParser);
     }
@@ -193,6 +200,9 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
                         case COPY_ARTIFACTS:
                             copyArtifactsModelParser.parseCopyArtifacts(reader, result.getCopyArtifacts());
                             break;
+                        case ARTIFACT_REFS:
+                            artifactRefsModelParser.parseArtifactRefs(reader, result.getArtifactRefs());
+                            break;
                         case FILE_PERMISSIONS:
                             filePermissionsModelParser.parseFilePermissions(reader, result.getFilePermissions());
                             break;
@@ -224,8 +234,8 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
                 case XMLStreamConstants.START_ELEMENT: {
                     final Element element = Element.of(reader.getName());
                     switch (element) {
-                        case ARTIFACT:
-                            result.getDependencies().add(parseName(reader));
+                        case FEATURE_PACK:
+                            result.getDependencies().add(parseDependencyArtifact(reader));
                             break;
                         default:
                             throw ParsingUtils.unexpectedContent(reader);
@@ -238,6 +248,28 @@ class FeaturePackBuildModelParser10 implements XMLElementReader<FeaturePackBuild
             }
         }
         throw ParsingUtils.endOfDocument(reader.getLocation());
+    }
+
+    private String parseDependencyArtifact(final XMLStreamReader reader) throws XMLStreamException {
+        final int count = reader.getAttributeCount();
+        String name = null;
+        final Set<Attribute> required = EnumSet.of(Attribute.ARTIFACT);
+        for (int i = 0; i < count; i++) {
+            final Attribute attribute = Attribute.of(reader.getAttributeName(i));
+            required.remove(attribute);
+            switch (attribute) {
+                case ARTIFACT:
+                    name = reader.getAttributeValue(i);
+                    break;
+                default:
+                    throw ParsingUtils.unexpectedContent(reader);
+            }
+        }
+        if (!required.isEmpty()) {
+            throw ParsingUtils.missingAttributes(reader.getLocation(), required);
+        }
+        ParsingUtils.parseNoContent(reader);
+        return propertyReplacer.replaceProperties(name);
     }
 
     private String parseName(final XMLStreamReader reader) throws XMLStreamException {

@@ -17,11 +17,13 @@
 package org.wildfly.build.provisioning.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.common.model.ConfigOverride;
 import org.wildfly.build.common.model.FileFilter;
-import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.common.model.CopyArtifact;
 
 /**
@@ -32,7 +34,7 @@ import org.wildfly.build.common.model.CopyArtifact;
 public class ServerProvisioningDescription {
 
     private final List<FeaturePack> featurePacks = new ArrayList<>();
-    private final List<Artifact> versionOverrides = new ArrayList<>();
+    private final Map<String, Artifact> artifactRefs = new HashMap<>();
     private final List<CopyArtifact> copyArtifacts = new ArrayList<>();
 
     private boolean copyModuleArtifacts;
@@ -59,8 +61,8 @@ public class ServerProvisioningDescription {
         this.extractSchemas = extractSchemas;
     }
 
-    public List<Artifact> getVersionOverrides() {
-        return versionOverrides;
+    public Map<String, Artifact> getArtifactRefs() {
+        return artifactRefs;
     }
 
     public List<CopyArtifact> getCopyArtifacts() {
@@ -72,13 +74,13 @@ public class ServerProvisioningDescription {
      */
     public static class FeaturePack {
 
-        private final Artifact artifact;
+        private final String artifact;
         private final ModuleFilters moduleFilters;
         private final ConfigOverride configOverride;
         private final ContentFilters contentFilters;
         private final List<Subsystem> subsystems;
 
-        public FeaturePack(Artifact artifact, ModuleFilters moduleFilters, ConfigOverride configOverride, ContentFilters contentFilters, List<Subsystem> subsystems) {
+        public FeaturePack(String artifact, ModuleFilters moduleFilters, ConfigOverride configOverride, ContentFilters contentFilters, List<Subsystem> subsystems) {
             this.artifact = artifact;
             this.moduleFilters = moduleFilters;
             this.configOverride = configOverride;
@@ -86,7 +88,7 @@ public class ServerProvisioningDescription {
             this.subsystems = subsystems;
         }
 
-        public Artifact getArtifact() {
+        public String getArtifact() {
             return artifact;
         }
 

@@ -22,6 +22,7 @@
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
+    <xs:include schemaLocation="wildfly-server-provisioning-common-1_0.xsd"/>
 
     <xs:element name="build">
         <xs:complexType>
@@ -29,6 +30,7 @@
                 <xs:element name="dependencies" type="dependencies-type" minOccurs="0" maxOccurs="1" />
                 <xs:element name="config" type="config-type" minOccurs="0" maxOccurs="1" />
                 <xs:element name="copy-artifacts" type="copy-artifacts-type" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="artifact-refs" type="artifact-refs-type" minOccurs="0" maxOccurs="1" />
                 <xs:element name="mkdirs" type="mkdirs-type" minOccurs="0" maxOccurs="1" />
                 <xs:element name="file-permissions" type="file-permissions-type" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="line-endings" type="line-endings-type" minOccurs="0" maxOccurs="1"/>
@@ -38,66 +40,20 @@
 
     <xs:complexType name="dependencies-type">
         <xs:sequence>
-            <xs:element name="artifact" type="named-type" maxOccurs="unbounded" minOccurs="0" />
+            <xs:element name="feature-pack" type="feature-pack-type" maxOccurs="unbounded" minOccurs="0" />
         </xs:sequence>
     </xs:complexType>
-    <xs:complexType name="named-type">
-        <xs:attribute name="name" type="xs:string"/>
-    </xs:complexType>
-
-    <xs:complexType name="config-type">
-        <xs:sequence>
-            <xs:element name="standalone" type="config-file-type" minOccurs="0" maxOccurs="unbounded" />
-            <xs:element name="domain" type="config-file-type" minOccurs="0" maxOccurs="unbounded" />
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="config-file-type">
-        <xs:sequence>
-            <xs:element name="property" type="property-type" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-        <xs:attribute name="template" use="required" type="xs:string"/>
-        <xs:attribute name="subsystems" use="required" type="xs:string"/>
-        <xs:attribute name="output-file" use="required" type="xs:string" />
-    </xs:complexType>
-    <xs:complexType name="property-type">
-        <xs:attribute name="name" use="required" type="xs:string"/>
-        <xs:attribute name="value" use="required" type="xs:string"/>
-    </xs:complexType>
-
-    <xs:complexType name="copy-artifacts-type">
-        <xs:sequence>
-            <xs:element name="copy-artifact" type="copy-artifact-type" minOccurs="0" maxOccurs="unbounded"/>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="copy-artifact-type">
-        <xs:sequence>
-            <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="artifact" />
-        <xs:attribute name="to-location" />
-        <xs:attribute name="extract" use="optional" default="false" />
-    </xs:complexType>
-    <xs:complexType name="filter-type">
-        <xs:attribute name="pattern" type="xs:string" use="required" />
-        <xs:attribute name="include" type="xs:boolean" use="required" />
-    </xs:complexType>
-
-    <xs:complexType name="file-permissions-type">
-        <xs:sequence>
-            <xs:element name="permission" type="file-permission-type" maxOccurs="unbounded" minOccurs="0" />
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="file-permission-type">
-        <xs:sequence>
-            <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded" />
-        </xs:sequence>
-        <xs:attribute name="value" use="required"/>
+    <xs:complexType name="feature-pack-type">
+        <xs:attribute name="artifact" type="artifact-name-type" use="required"/>
     </xs:complexType>
 
     <xs:complexType name="mkdirs-type">
         <xs:sequence>
             <xs:element name="dir" type="named-type" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="named-type">
+        <xs:attribute name="name" type="xs:string"/>
     </xs:complexType>
 
     <xs:complexType name="line-endings-type">
@@ -111,4 +67,5 @@
             <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
+
 </xs:schema>
