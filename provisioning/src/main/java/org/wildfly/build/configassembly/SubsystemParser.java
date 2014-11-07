@@ -30,9 +30,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
 import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
@@ -51,7 +53,7 @@ class SubsystemParser extends NodeParser {
     private Node subsystem;
     private final Map<String, ElementNode> socketBindings = new HashMap<String, ElementNode>();
     private final Map<String, ElementNode> outboundSocketBindings = new HashMap<String, ElementNode>();
-    private final Map<String, ProcessingInstructionNode> supplementPlaceholders = new HashMap<String, ProcessingInstructionNode>();
+    private final Map<String, Set<ProcessingInstructionNode>> supplementPlaceholders = new HashMap<String, Set<ProcessingInstructionNode>>();
     private final Map<String, Supplement> supplementReplacements = new HashMap<String, Supplement>();
     private final Map<String, List<AttributeValue>> attributesForReplacement = new HashMap<String, List<AttributeValue>>();
 
@@ -119,11 +121,14 @@ class SubsystemParser extends NodeParser {
                     throw new IllegalStateException("No supplement called '" + supplementName + "' could be found to augment the subsystem configuration");
                 }
                 Map<String, ElementNode> nodeReplacements = supplement.getAllNodeReplacements();
-                for (Map.Entry<String, ProcessingInstructionNode> entry : supplementPlaceholders.entrySet()) {
+                for (Map.Entry<String, Set<ProcessingInstructionNode>> entry : supplementPlaceholders.entrySet()) {
                     ElementNode replacement = nodeReplacements.get(entry.getKey());
                     if (replacement != null) {
                         for (Iterator<Node> it = replacement.iterateChildren() ; it.hasNext() ; ) {
-                            entry.getValue().addDelegate(it.next());
+                            Node node = it.next();
+                            for (ProcessingInstructionNode processingInstructionNode : entry.getValue()) {
+                                processingInstructionNode.addDelegate(node);
+                            }
                         }
                     }
                 }
@@ -240,9 +245,14 @@ class SubsystemParser extends NodeParser {
     protected ProcessingInstructionNode parseProcessingInstruction(XMLStreamReader reader, ElementNode parent) throws XMLStreamException {
         String name = reader.getPITarget();
         ProcessingInstructionNode placeholder = new ProcessingInstructionNode(name, parseProcessingInstructionData(reader.getPIData()));
-        if (supplementPlaceholders.put(name, placeholder) != null) {
-            throw new IllegalStateException("Already have a processing instruction called <?" + name + "?>");
+        Set<ProcessingInstructionNode> processingInstructionNodes;
+        if (supplementPlaceholders.containsKey(name)) {
+            processingInstructionNodes = supplementPlaceholders.get(name);
+        } else {
+            processingInstructionNodes = new HashSet<ProcessingInstructionNode>();
         }
+        processingInstructionNodes.add(placeholder);
+        supplementPlaceholders.put(name, processingInstructionNodes);
         return placeholder;
     }
 
