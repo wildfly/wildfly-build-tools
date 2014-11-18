@@ -30,7 +30,7 @@ import java.io.InputStream;
  */
 public class ServerProvisioningDescriptionModelParser {
 
-    private static final QName ROOT_1_0 = new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, ServerProvisioningDescriptionModelParser10.Element.SERVER_PROVISIONING.getLocalName());
+    private static final QName ROOT_1_0 = new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, Element.SERVER_PROVISIONING.getLocalName());
 
     private static final XMLInputFactory INPUT_FACTORY = XMLInputFactory.newInstance();
 

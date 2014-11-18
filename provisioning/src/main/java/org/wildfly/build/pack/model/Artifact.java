@@ -16,6 +16,8 @@
 
 package org.wildfly.build.pack.model;
 
+import org.wildfly.build.logger.ProvisioningLogger;
+
 /**
  * @author Eduardo Martins
  */
@@ -50,6 +52,15 @@ public class Artifact implements Comparable<Artifact> {
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    public static Artifact parse(String description) {
+        String[] parts = description.split(":");
+        if(parts.length != 3) {
+            throw ProvisioningLogger.ROOT_LOGGER.cannotParseArtifact(description);
+        }
+        //TODO: do this properly
+        return new Artifact(parts[0], parts[1], null, "jar", parts[2]);
     }
 
     @Override

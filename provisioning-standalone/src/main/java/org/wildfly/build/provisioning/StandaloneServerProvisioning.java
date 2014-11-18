@@ -27,6 +27,7 @@ import org.wildfly.build.util.PropertiesBasedArtifactResolver;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Arrays;
 import java.util.Properties;
 
 /**
@@ -41,6 +42,25 @@ public class StandaloneServerProvisioning {
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
+        if(args.length == 0) {
+            printUsageAndExit(1);
+        }
+        String operation = args[0];
+        switch (operation) {
+            case "provision": {
+                provision(Arrays.copyOfRange(args, 1, args.length));
+                break;
+            } case "create" : {
+                //creates a server provisioning file without provisioning the server
+                CreateCommand.createServer(Arrays.copyOfRange(args, 1, args.length));
+                break;
+            }
+        }
+
+    }
+
+    private static void provision(String[] args) {
+
         final File configFile = new File(args.length == 1 ? args[0] : "server-provisioning.xml");
         // environment is the sys properties
         final Properties environment = System.getProperties();
@@ -65,5 +85,14 @@ public class StandaloneServerProvisioning {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void printUsageAndExit(int status) {
+        System.out.println("TODO: usage instructions");
+        System.exit(status);
+    }
+
+    private class Parameters {
+
     }
 }

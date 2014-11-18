@@ -78,7 +78,7 @@ public class ServerProvisioningDescription {
         private final ContentFilters contentFilters;
         private final List<Subsystem> subsystems;
 
-        FeaturePack(Artifact artifact, ModuleFilters moduleFilters, ConfigOverride configOverride, ContentFilters contentFilters, List<Subsystem> subsystems) {
+        public FeaturePack(Artifact artifact, ModuleFilters moduleFilters, ConfigOverride configOverride, ContentFilters contentFilters, List<Subsystem> subsystems) {
             this.artifact = artifact;
             this.moduleFilters = moduleFilters;
             this.configOverride = configOverride;

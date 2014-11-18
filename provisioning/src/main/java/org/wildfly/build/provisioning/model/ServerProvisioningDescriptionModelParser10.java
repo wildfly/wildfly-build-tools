@@ -30,7 +30,6 @@ import org.wildfly.build.util.MapPropertyResolver;
 import org.wildfly.build.util.PropertyResolver;
 import org.wildfly.build.util.xml.ParsingUtils;
 
-import javax.xml.namespace.QName;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -50,144 +49,6 @@ import java.util.Set;
 class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<ServerProvisioningDescription> {
 
     public static final String NAMESPACE_1_0 = "urn:wildfly:server-provisioning:1.0";
-
-    enum Element {
-
-        // default unknown element
-        UNKNOWN(null),
-
-        SERVER_PROVISIONING("server-provisioning"),
-        FEATURE_PACKS("feature-packs"),
-        FEATURE_PACK("feature-pack"),
-        ARTIFACT("artifact"),
-        MODULES("modules"),
-        CONFIG("config"),
-        STANDALONE("standalone"),
-        DOMAIN("domain"),
-        PROPERTY("property"),
-        SUBSYSTEMS("subsystems"),
-        SUBSYSTEM("subsystem"),
-        CONTENTS("contents"),
-        VERSION_OVERRIDES("version-overrides"),
-        VERSION_OVERRIDE("version-override"),
-        COPY_ARTIFACTS(CopyArtifactsModelParser10.ELEMENT_LOCAL_NAME),
-        FILTER(FileFilterModelParser10.ELEMENT_LOCAL_NAME),
-        ;
-
-        private static final Map<QName, Element> elements;
-
-        static {
-            Map<QName, Element> elementsMap = new HashMap<QName, Element>();
-            elementsMap.put(new QName(NAMESPACE_1_0, SERVER_PROVISIONING.getLocalName()), SERVER_PROVISIONING);
-            elementsMap.put(new QName(NAMESPACE_1_0, FEATURE_PACKS.getLocalName()), FEATURE_PACKS);
-            elementsMap.put(new QName(NAMESPACE_1_0, FEATURE_PACK.getLocalName()), FEATURE_PACK);
-            elementsMap.put(new QName(NAMESPACE_1_0, ARTIFACT.getLocalName()), ARTIFACT);
-            elementsMap.put(new QName(NAMESPACE_1_0, MODULES.getLocalName()), MODULES);
-            elementsMap.put(new QName(NAMESPACE_1_0, FILTER.getLocalName()), FILTER);
-            elementsMap.put(new QName(NAMESPACE_1_0, CONFIG.getLocalName()), CONFIG);
-            elementsMap.put(new QName(NAMESPACE_1_0, STANDALONE.getLocalName()), STANDALONE);
-            elementsMap.put(new QName(NAMESPACE_1_0, DOMAIN.getLocalName()), DOMAIN);
-            elementsMap.put(new QName(NAMESPACE_1_0, PROPERTY.getLocalName()), PROPERTY);
-            elementsMap.put(new QName(NAMESPACE_1_0, SUBSYSTEMS.getLocalName()), SUBSYSTEMS);
-            elementsMap.put(new QName(NAMESPACE_1_0, SUBSYSTEM.getLocalName()), SUBSYSTEM);
-            elementsMap.put(new QName(NAMESPACE_1_0, CONTENTS.getLocalName()), CONTENTS);
-            elementsMap.put(new QName(NAMESPACE_1_0, VERSION_OVERRIDES.getLocalName()), VERSION_OVERRIDES);
-            elementsMap.put(new QName(NAMESPACE_1_0, VERSION_OVERRIDE.getLocalName()), VERSION_OVERRIDE);
-            elementsMap.put(new QName(NAMESPACE_1_0, COPY_ARTIFACTS.getLocalName()), COPY_ARTIFACTS);
-            elements = elementsMap;
-        }
-
-        static Element of(QName qName) {
-            QName name;
-            if (qName.getNamespaceURI().equals("")) {
-                name = new QName(NAMESPACE_1_0, qName.getLocalPart());
-            } else {
-                name = qName;
-            }
-            final Element element = elements.get(name);
-            return element == null ? UNKNOWN : element;
-        }
-
-        private final String name;
-
-        Element(final String name) {
-            this.name = name;
-        }
-
-        /**
-         * Get the local name of this element.
-         *
-         * @return the local name
-         */
-        public String getLocalName() {
-            return name;
-        }
-    }
-
-    enum Attribute {
-
-        // default unknown attribute
-        UNKNOWN(null),
-
-        COPY_MODULE_ARTIFACTS("copy-module-artifacts"),
-        EXTRACT_SCHEMAS("extract-schemas"),
-        PATTERN("pattern"),
-        INCLUDE("include"),
-        TRANSITIVE("transitive"),
-        OUTPUT_FILE("output-file"),
-        USE_TEMPLATE("use-template"),
-        NAME("name"),
-        VALUE("value"),
-        GROUP_ID("groupId"),
-        ARTIFACT_ID("artifactId"),
-        CLASSIFIER("classifier"),
-        EXTENSION("extension"),
-        VERSION("version"),
-        ;
-
-        private static final Map<QName, Attribute> attributes;
-
-        static {
-            Map<QName, Attribute> attributesMap = new HashMap<QName, Attribute>();
-            attributesMap.put(new QName(PATTERN.getLocalName()), PATTERN);
-            attributesMap.put(new QName(INCLUDE.getLocalName()), INCLUDE);
-            attributesMap.put(new QName(TRANSITIVE.getLocalName()), TRANSITIVE);
-            attributesMap.put(new QName(OUTPUT_FILE.getLocalName()), OUTPUT_FILE);
-            attributesMap.put(new QName(USE_TEMPLATE.getLocalName()), USE_TEMPLATE);
-            attributesMap.put(new QName(NAME.getLocalName()), NAME);
-            attributesMap.put(new QName(VALUE.getLocalName()), VALUE);
-            attributesMap.put(new QName(COPY_MODULE_ARTIFACTS.getLocalName()), COPY_MODULE_ARTIFACTS);
-            attributesMap.put(new QName(EXTRACT_SCHEMAS.getLocalName()), EXTRACT_SCHEMAS);
-            attributesMap.put(new QName(GROUP_ID.getLocalName()), GROUP_ID);
-            attributesMap.put(new QName(ARTIFACT_ID.getLocalName()), ARTIFACT_ID);
-            attributesMap.put(new QName(CLASSIFIER.getLocalName()), CLASSIFIER);
-            attributesMap.put(new QName(EXTENSION.getLocalName()), EXTENSION);
-            attributesMap.put(new QName(VERSION.getLocalName()), VERSION);
-
-
-            attributes = attributesMap;
-        }
-
-        static Attribute of(QName qName) {
-            final Attribute attribute = attributes.get(qName);
-            return attribute == null ? UNKNOWN : attribute;
-        }
-
-        private final String name;
-
-        Attribute(final String name) {
-            this.name = name;
-        }
-
-        /**
-         * Get the local name of this element.
-         *
-         * @return the local name
-         */
-        public String getLocalName() {
-            return name;
-        }
-    }
 
     private final BuildPropertyReplacer propertyReplacer;
     private final CopyArtifactsModelParser10 copyArtifactsModelParser;
@@ -660,5 +521,4 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
 
         return new Artifact(groupId, artifact, classifier, extension, version);
     }
-
 }
