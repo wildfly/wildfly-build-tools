@@ -41,6 +41,7 @@ public class ProvisionCommand {
 
     public static void provision(File configFile) {
 
+        //TODO: better target selection, also make sure provisioning file is copied
         // environment is the sys properties
         final Properties environment = System.getProperties();
         // setup build dir

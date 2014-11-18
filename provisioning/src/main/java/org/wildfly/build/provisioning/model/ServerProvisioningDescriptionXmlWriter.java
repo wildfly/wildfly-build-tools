@@ -61,5 +61,19 @@ public class ServerProvisioningDescriptionXmlWriter implements XMLElementWriter<
         if(pack.getArtifact().getGACE().getClassifier() != null) {
             streamWriter.writeAttribute(Attribute.CLASSIFIER.getLocalName(), pack.getArtifact().getGACE().getClassifier());
         }
+
+        if(!pack.getSubsystems().isEmpty()) {
+            streamWriter.writeStartElement(Element.SUBSYSTEMS.getLocalName());
+            for(ServerProvisioningDescription.FeaturePack.Subsystem subsystem : pack.getSubsystems()) {
+                streamWriter.writeStartElement(Element.SUBSYSTEM.getLocalName());
+                streamWriter.writeAttribute(Attribute.NAME.getLocalName(), subsystem.getName());
+                streamWriter.writeAttribute(Attribute.TRANSITIVE.getLocalName(), Boolean.toString(subsystem.isTransitive()));
+
+                streamWriter.writeEndElement();
+            }
+            streamWriter.writeEndElement();
+        }
+
+        streamWriter.writeEndElement();
     }
 }

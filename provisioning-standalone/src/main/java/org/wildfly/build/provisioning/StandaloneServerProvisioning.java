@@ -16,19 +16,7 @@
 
 package org.wildfly.build.provisioning;
 
-import org.wildfly.build.AetherArtifactFileResolver;
-import org.wildfly.build.ArtifactResolver;
-import org.wildfly.build.pack.model.DelegatingArtifactResolver;
-import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
-import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
-import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionModelParser;
-import org.wildfly.build.util.MapPropertyResolver;
-import org.wildfly.build.util.PropertiesBasedArtifactResolver;
-
-import java.io.File;
-import java.io.FileInputStream;
 import java.util.Arrays;
-import java.util.Properties;
 
 /**
  * The standalone app to provision a WildFly server.
