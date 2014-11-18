@@ -48,7 +48,7 @@ public class StandaloneServerProvisioning {
         String operation = args[0];
         switch (operation) {
             case "provision": {
-                provision(Arrays.copyOfRange(args, 1, args.length));
+                ProvisionCommand.provision(Arrays.copyOfRange(args, 1, args.length));
                 break;
             } case "create" : {
                 //creates a server provisioning file without provisioning the server
@@ -59,33 +59,6 @@ public class StandaloneServerProvisioning {
 
     }
 
-    private static void provision(String[] args) {
-
-        final File configFile = new File(args.length == 1 ? args[0] : "server-provisioning.xml");
-        // environment is the sys properties
-        final Properties environment = System.getProperties();
-        // setup build dir
-        final File buildDir = new File("target");
-        buildDir.mkdirs();
-        // create the standalone aether artifact file resolver, reuse maven local repo if found at standard location
-        final File mavenLocalRepositoryBaseDir = new File(new File(System.getProperty("user.home"), ".m2"), "repository");
-        final AetherArtifactFileResolver aetherArtifactFileResolver = new StandaloneAetherArtifactFileResolver(mavenLocalRepositoryBaseDir.exists() ? mavenLocalRepositoryBaseDir : (new File(buildDir, "repository")));
-        try (FileInputStream configStream = new FileInputStream(configFile)) {
-            // parse description
-            final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(environment)).parse(configStream);
-            // create version override artifact resolver
-            ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
-            if(Boolean.valueOf(environment.getProperty("system-property-version-overrides", "false"))) {
-                overrideArtifactResolver = new DelegatingArtifactResolver(new PropertiesBasedArtifactResolver(environment), overrideArtifactResolver);
-            }
-            // provision the server
-            final File outputDir = new File(buildDir, "wildfly");
-            ServerProvisioner.build(serverProvisioningDescription, outputDir, aetherArtifactFileResolver, overrideArtifactResolver);
-            System.out.print("Server provisioning at "+outputDir+" complete.");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private static void printUsageAndExit(int status) {
         System.out.println("TODO: usage instructions");

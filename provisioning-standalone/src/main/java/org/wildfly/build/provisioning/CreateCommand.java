@@ -22,6 +22,7 @@ import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionXmlWrit
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -86,6 +87,9 @@ public class CreateCommand {
             printUsageAndExit(1);
         }
         doCreate(packs, file);
+        if(!noProvision) {
+            ProvisionCommand.provision(new File(file));
+        }
     }
 
     private static void doCreate(List<FeaturePack> packs, String file) {
