@@ -16,13 +16,15 @@
 
 package org.wildfly.build.provisioning.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.wildfly.build.common.model.ConfigOverride;
+import org.wildfly.build.common.model.CopyArtifact;
 import org.wildfly.build.common.model.FileFilter;
 import org.wildfly.build.pack.model.Artifact;
-import org.wildfly.build.common.model.CopyArtifact;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Representation of the server provisioning config
@@ -32,7 +34,7 @@ import org.wildfly.build.common.model.CopyArtifact;
 public class ServerProvisioningDescription {
 
     private final List<FeaturePack> featurePacks = new ArrayList<>();
-    private final List<Artifact> versionOverrides = new ArrayList<>();
+    private final Set<Artifact> versionOverrides = new HashSet<>();
     private final List<CopyArtifact> copyArtifacts = new ArrayList<>();
 
     private boolean copyModuleArtifacts;
@@ -59,7 +61,7 @@ public class ServerProvisioningDescription {
         this.extractSchemas = extractSchemas;
     }
 
-    public List<Artifact> getVersionOverrides() {
+    public Set<Artifact> getVersionOverrides() {
         return versionOverrides;
     }
 
@@ -73,10 +75,10 @@ public class ServerProvisioningDescription {
     public static class FeaturePack {
 
         private final Artifact artifact;
-        private final ModuleFilters moduleFilters;
-        private final ConfigOverride configOverride;
-        private final ContentFilters contentFilters;
-        private final List<Subsystem> subsystems;
+        private ModuleFilters moduleFilters;
+        private ConfigOverride configOverride;
+        private ContentFilters contentFilters;
+        private List<Subsystem> subsystems;
 
         public FeaturePack(Artifact artifact, ModuleFilters moduleFilters, ConfigOverride configOverride, ContentFilters contentFilters, List<Subsystem> subsystems) {
             this.artifact = artifact;
@@ -100,6 +102,14 @@ public class ServerProvisioningDescription {
 
         /**
          *
+         * @param moduleFilters
+         */
+        public void setModuleFilters(ModuleFilters moduleFilters) {
+            this.moduleFilters = moduleFilters;
+        }
+
+        /**
+         *
          * @return the configuration to include; may be null, which translates to include the feature pack configuration without any change
          */
         public ConfigOverride getConfigOverride() {
@@ -108,10 +118,26 @@ public class ServerProvisioningDescription {
 
         /**
          *
-         * @return the content filters; if null that translates to include all content files
+         * @param configOverride
+         */
+        public void setConfigOverride(ConfigOverride configOverride) {
+            this.configOverride = configOverride;
+        }
+
+        /**
+         *
+         * @return the content filters; if null and there is no subsystem/config/module filtering that translates to include all content files
          */
         public ContentFilters getContentFilters() {
             return contentFilters;
+        }
+
+        /**
+         *
+         * @param contentFilters
+         */
+        public void setContentFilters(ContentFilters contentFilters) {
+            this.contentFilters = contentFilters;
         }
 
         /**
@@ -120,6 +146,14 @@ public class ServerProvisioningDescription {
          */
         public List<Subsystem> getSubsystems() {
             return subsystems;
+        }
+
+        /**
+         *
+         * @param subsystems
+         */
+        public void setSubsystems(List<Subsystem> subsystems) {
+            this.subsystems = subsystems;
         }
 
         /**
@@ -142,7 +176,7 @@ public class ServerProvisioningDescription {
             private final List<ModuleFilter> filters = new ArrayList<>();
             private final boolean include;
 
-            ModuleFilters(boolean include) {
+            public ModuleFilters(boolean include) {
                 this.include = include;
             }
 
@@ -171,7 +205,7 @@ public class ServerProvisioningDescription {
             private final List<FileFilter> filters = new ArrayList<>();
             private final boolean include;
 
-            ContentFilters(boolean include) {
+            public ContentFilters(boolean include) {
                 this.include = include;
             }
 
@@ -196,20 +230,25 @@ public class ServerProvisioningDescription {
          *
          */
         public static class Subsystem {
-            private final String module;
+            private final String name;
             private final boolean transitive;
 
-            public Subsystem(String module, boolean transitive) {
-                this.module = module;
+            public Subsystem(String name, boolean transitive) {
+                this.name = name;
                 this.transitive = transitive;
             }
 
             public String getName() {
-                return module;
+                return name;
             }
 
             public boolean isTransitive() {
                 return transitive;
+            }
+
+            @Override
+            public String toString() {
+                return getName();
             }
         }
     }

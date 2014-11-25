@@ -29,6 +29,9 @@ public class FileFilter {
     private final boolean include;
 
     public FileFilter(String patternString, boolean include) {
+        if (patternString == null) {
+            throw new IllegalArgumentException("null pattern");
+        }
         this.patternString = patternString;
         this.pattern = Pattern.compile(ParsingUtils.wildcardToJavaRegexp(patternString));
         this.include = include;
@@ -49,5 +52,25 @@ public class FileFilter {
         return include;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
+        FileFilter that = (FileFilter) o;
+
+        if (!patternString.equals(that.patternString)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return patternString.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return patternString;
+    }
 }

@@ -2,6 +2,7 @@ package org.wildfly.build.common.model;
 
 import org.wildfly.build.configassembly.SubsystemConfig;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -23,6 +24,10 @@ public class ConfigFileOverride {
         this.outputFile = outputFile;
     }
 
+    public ConfigFileOverride(boolean useTemplate, String outputFile) {
+        this(new HashMap<String, String>(), useTemplate, null, outputFile);
+    }
+
     public Map<String, String> getProperties() {
         return properties;
     }
@@ -33,6 +38,10 @@ public class ConfigFileOverride {
 
     public Map<String, Map<String, SubsystemConfig>> getSubsystems() {
         return subsystems;
+    }
+
+    public void setSubsystems(Map<String, Map<String, SubsystemConfig>> subsystems) {
+        this.subsystems = subsystems;
     }
 
     public String getOutputFile() {

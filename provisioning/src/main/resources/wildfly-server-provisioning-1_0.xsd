@@ -77,7 +77,7 @@
     <xs:complexType name="feature-pack-config-file-type">
         <xs:sequence>
             <xs:element name="property" type="feature-pack-config-file-property-type" minOccurs="0" maxOccurs="unbounded"/>
-            <xs:element name="subsystems" type="feature-pack-config-file-subsystems-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="subsystems" type="feature-pack-config-file-subsystems-type" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="output-file" use="required" type="xs:string" />
         <xs:attribute name="use-template" use="optional" type="xs:boolean" />

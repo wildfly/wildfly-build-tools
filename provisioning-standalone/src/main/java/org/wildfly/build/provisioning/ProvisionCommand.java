@@ -18,6 +18,7 @@ package org.wildfly.build.provisioning;
 
 import org.wildfly.build.AetherArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.StandaloneAetherArtifactFileResolver;
 import org.wildfly.build.pack.model.DelegatingArtifactResolver;
 import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;

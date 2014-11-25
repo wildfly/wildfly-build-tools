@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.wildfly.build.provisioning;
+package org.wildfly.build;
 
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
 import org.eclipse.aether.DefaultRepositorySystemSession;
@@ -27,7 +27,6 @@ import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 import org.eclipse.aether.spi.connector.transport.TransporterFactory;
 import org.eclipse.aether.transport.file.FileTransporterFactory;
 import org.eclipse.aether.transport.http.HttpTransporterFactory;
-import org.wildfly.build.AetherArtifactFileResolver;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -38,6 +37,36 @@ import java.util.List;
  * @author Eduardo Martins
  */
 public class StandaloneAetherArtifactFileResolver extends AetherArtifactFileResolver {
+
+    /**
+     * a default instance
+     */
+    public static final StandaloneAetherArtifactFileResolver DEFAULT_INSTANCE = new StandaloneAetherArtifactFileResolver();
+
+    /**
+     *
+     * @return
+     */
+    private static File getDefaultLocalRepositoryDir() {
+        // create the standalone aether artifact file resolver, reuse maven local repo if found at standard location, or the tmp dir
+        final File mavenLocalRepositoryBaseDir = new File(new File(System.getProperty("user.home"), ".m2"), "repository");
+        return mavenLocalRepositoryBaseDir.exists() ? mavenLocalRepositoryBaseDir : (new File(new File(System.getProperty("java.io.tmpdir")), "repository"));
+    }
+
+    /**
+     * Constructs a new instance using the default local repository base dir, and the default remote repositories.
+     */
+    public StandaloneAetherArtifactFileResolver() {
+        this(getDefaultLocalRepositoryDir(), getStandardRemoteRepositories());
+    }
+
+    /**
+     * Constructs a new instance using the default local repository base dir, and provided remote repositories.
+     * @param remoteRepositories
+     */
+    public StandaloneAetherArtifactFileResolver(List<RemoteRepository> remoteRepositories) {
+        this(getDefaultLocalRepositoryDir(), newRepositorySystem(), remoteRepositories);
+    }
 
     /**
      * Constructs a new instance using the provided local repository base dir, and the default remote repositories.
