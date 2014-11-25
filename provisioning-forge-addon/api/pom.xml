@@ -1,0 +1,60 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.wildfly.build</groupId>
+      <artifactId>wildfly-server-provisioning-forge-addon-parent</artifactId>
+      <version>1.0.0.Alpha7-SNAPSHOT</version>
+      <relativePath>../pom.xml</relativePath>
+   </parent>
+
+   <artifactId>wildfly-server-provisioning-forge-addon-api</artifactId>
+
+   <name>WildFly Build Tools: Server Provisioning JBoss Forge Addon API</name>
+
+   <dependencies>
+       <dependency>
+           <groupId>org.jboss.forge.addon</groupId>
+           <artifactId>resources</artifactId>
+           <classifier>forge-addon</classifier>
+           <scope>provided</scope>
+       </dependency>
+      <dependency>
+         <groupId>${project.groupId}</groupId>
+         <artifactId>wildfly-server-provisioning</artifactId>
+          <scope>compile</scope>
+          <exclusions>
+              <exclusion>
+                  <groupId>org.jboss</groupId>
+                  <artifactId>jandex</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.jboss.logging</groupId>
+                  <artifactId>jboss-logging</artifactId>
+              </exclusion>
+              <!--
+              <exclusion>
+                  <groupId>org.jboss</groupId>
+                  <artifactId>staxmapper</artifactId>
+              </exclusion>
+              -->
+              <exclusion>
+                  <groupId>org.eclipse.aether</groupId>
+                  <artifactId>aether-api</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.jboss.logging</groupId>
+                  <artifactId>jboss-logging-annotations</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.sonatype.aether</groupId>
+                  <artifactId>aether-api</artifactId>
+              </exclusion>
+              <exclusion>
+                  <groupId>org.sonatype.aether</groupId>
+                  <artifactId>aether-util</artifactId>
+              </exclusion>
+          </exclusions>
+      </dependency>
+   </dependencies>
+</project>

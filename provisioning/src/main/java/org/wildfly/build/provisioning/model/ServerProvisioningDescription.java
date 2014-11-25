@@ -73,10 +73,10 @@ public class ServerProvisioningDescription {
     public static class FeaturePack {
 
         private final Artifact artifact;
-        private final ModuleFilters moduleFilters;
-        private final ConfigOverride configOverride;
-        private final ContentFilters contentFilters;
-        private final List<Subsystem> subsystems;
+        private ModuleFilters moduleFilters;
+        private ConfigOverride configOverride;
+        private ContentFilters contentFilters;
+        private List<Subsystem> subsystems;
 
         public FeaturePack(Artifact artifact, ModuleFilters moduleFilters, ConfigOverride configOverride, ContentFilters contentFilters, List<Subsystem> subsystems) {
             this.artifact = artifact;
@@ -100,10 +100,26 @@ public class ServerProvisioningDescription {
 
         /**
          *
+         * @param moduleFilters
+         */
+        public void setModuleFilters(ModuleFilters moduleFilters) {
+            this.moduleFilters = moduleFilters;
+        }
+
+        /**
+         *
          * @return the configuration to include; may be null, which translates to include the feature pack configuration without any change
          */
         public ConfigOverride getConfigOverride() {
             return configOverride;
+        }
+
+        /**
+         *
+         * @param configOverride
+         */
+        public void setConfigOverride(ConfigOverride configOverride) {
+            this.configOverride = configOverride;
         }
 
         /**
@@ -116,10 +132,26 @@ public class ServerProvisioningDescription {
 
         /**
          *
+         * @param contentFilters
+         */
+        public void setContentFilters(ContentFilters contentFilters) {
+            this.contentFilters = contentFilters;
+        }
+
+        /**
+         *
          * @return a list containing the subsystems to include
          */
         public List<Subsystem> getSubsystems() {
             return subsystems;
+        }
+
+        /**
+         *
+         * @param subsystems
+         */
+        public void setSubsystems(List<Subsystem> subsystems) {
+            this.subsystems = subsystems;
         }
 
         /**
@@ -196,20 +228,25 @@ public class ServerProvisioningDescription {
          *
          */
         public static class Subsystem {
-            private final String module;
+            private final String name;
             private final boolean transitive;
 
-            public Subsystem(String module, boolean transitive) {
-                this.module = module;
+            public Subsystem(String name, boolean transitive) {
+                this.name = name;
                 this.transitive = transitive;
             }
 
             public String getName() {
-                return module;
+                return name;
             }
 
             public boolean isTransitive() {
                 return transitive;
+            }
+
+            @Override
+            public String toString() {
+                return getName();
             }
         }
     }

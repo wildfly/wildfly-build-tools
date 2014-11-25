@@ -40,6 +40,36 @@ import java.util.List;
 public class StandaloneAetherArtifactFileResolver extends AetherArtifactFileResolver {
 
     /**
+     * a default instance
+     */
+    public static final StandaloneAetherArtifactFileResolver DEFAULT_INSTANCE = new StandaloneAetherArtifactFileResolver();
+
+    /**
+     *
+     * @return
+     */
+    private static File getDefaultLocalRepositoryDir() {
+        // create the standalone aether artifact file resolver, reuse maven local repo if found at standard location, or the tmp dir
+        final File mavenLocalRepositoryBaseDir = new File(new File(System.getProperty("user.home"), ".m2"), "repository");
+        return mavenLocalRepositoryBaseDir.exists() ? mavenLocalRepositoryBaseDir : (new File(new File(System.getProperty("java.io.tmpdir")), "repository"));
+    }
+
+    /**
+     * Constructs a new instance using the default local repository base dir, and the default remote repositories.
+     */
+    public StandaloneAetherArtifactFileResolver() {
+        this(getDefaultLocalRepositoryDir(), getStandardRemoteRepositories());
+    }
+
+    /**
+     * Constructs a new instance using the default local repository base dir, and provided remote repositories.
+     * @param remoteRepositories
+     */
+    public StandaloneAetherArtifactFileResolver(List<RemoteRepository> remoteRepositories) {
+        this(getDefaultLocalRepositoryDir(), newRepositorySystem(), remoteRepositories);
+    }
+
+    /**
      * Constructs a new instance using the provided local repository base dir, and the default remote repositories.
      * @param localRepositoryBaseDir
      */

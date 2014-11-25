@@ -1,0 +1,52 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+
+   <parent>
+      <groupId>org.wildfly.build</groupId>
+      <artifactId>wildfly-server-provisioning-forge-addon-parent</artifactId>
+      <version>1.0.0.Alpha7-SNAPSHOT</version>
+      <relativePath>../pom.xml</relativePath>
+   </parent>
+
+   <artifactId>wildfly-server-provisioning-forge-addon-impl</artifactId>
+
+   <name>WildFly Build Tools: Server Provisioning JBoss Forge Addon Impl</name>
+
+   <dependencies>
+       <!-- libs -->
+       <dependency>
+           <groupId>${project.groupId}</groupId>
+           <artifactId>wildfly-server-provisioning-standalone</artifactId>
+           <exclusions>
+               <exclusion>
+                   <groupId>${project.groupId}</groupId>
+                   <artifactId>wildfly-server-provisioning</artifactId>
+               </exclusion>
+           </exclusions>
+       </dependency>
+       <dependency>
+           <groupId>${project.groupId}</groupId>
+           <artifactId>wildfly-server-provisioning-forge-addon-api</artifactId>
+       </dependency>
+       <!-- forge addons -->
+       <dependency>
+           <groupId>org.jboss.forge.addon</groupId>
+           <artifactId>ui</artifactId>
+           <classifier>forge-addon</classifier>
+           <scope>provided</scope>
+       </dependency>
+       <dependency>
+           <groupId>org.jboss.forge.addon</groupId>
+           <artifactId>resources</artifactId>
+           <classifier>forge-addon</classifier>
+           <scope>provided</scope>
+       </dependency>
+       <!-- furnace -->
+       <dependency>
+           <groupId>org.jboss.forge.furnace.container</groupId>
+           <artifactId>cdi-api</artifactId>
+           <scope>provided</scope>
+       </dependency>
+   </dependencies>
+
+</project>

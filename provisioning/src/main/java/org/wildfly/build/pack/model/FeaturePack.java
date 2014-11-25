@@ -18,10 +18,13 @@ package org.wildfly.build.pack.model;
 
 import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.common.model.ConfigFile;
+import org.wildfly.build.configassembly.SubsystemConfig;
 import org.wildfly.build.util.ModuleParseResult;
 import org.wildfly.build.util.ModuleParser;
 import org.wildfly.build.util.ZipFileSubsystemInputStreamSources;
 
+import javax.xml.stream.XMLStreamException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayDeque;
@@ -29,8 +32,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.jar.JarFile;
@@ -150,6 +155,27 @@ public class FeaturePack {
             }
         }
         return null;
+    }
+
+    /**
+     * Retrieves all subsystems included in the feature pack config files.
+     * @return
+     * @throws IOException
+     * @throws XMLStreamException
+     */
+    public Set<String> getSubsystems() throws IOException, XMLStreamException {
+        final Set<String> result = new HashSet<>();
+        for (ConfigFile configFile : description.getConfig().getDomainConfigFiles()) {
+            for (Map<String, SubsystemConfig> subsystems : configFile.getSubsystemConfigs(featurePackFile).values()) {
+                result.addAll(subsystems.keySet());
+            }
+        }
+        for (ConfigFile configFile : description.getConfig().getStandaloneConfigFiles()) {
+            for (Map<String, SubsystemConfig> subsystems : configFile.getSubsystemConfigs(featurePackFile).values()) {
+                result.addAll(subsystems.keySet());
+            }
+        }
+        return result;
     }
 
     @Override

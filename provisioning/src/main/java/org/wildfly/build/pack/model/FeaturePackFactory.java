@@ -89,13 +89,13 @@ public class FeaturePackFactory {
             final FeaturePackDescription description = createFeaturePackDescription(jar);
             // create feature pack artifact resolver
             final FeaturePackArtifactResolver featurePackArtifactResolver = new FeaturePackArtifactResolver(description.getArtifactVersions());
-            final DelegatingArtifactResolver delegatingArtifactResolver = new DelegatingArtifactResolver(versionOverrideResolver, featurePackArtifactResolver);
+            final ArtifactResolver artifactResolver = versionOverrideResolver == null ? featurePackArtifactResolver : new DelegatingArtifactResolver(versionOverrideResolver, featurePackArtifactResolver);
             // create dependencies feature packs
             final List<FeaturePack> dependencies = new ArrayList<>();
             for (String dependency : description.getDependencies()) {
-                dependencies.add(createPack(delegatingArtifactResolver.getArtifact(dependency), artifactFileResolver, versionOverrideResolver, new HashSet<>(processedFeaturePacks)));
+                dependencies.add(createPack(artifactResolver.getArtifact(dependency), artifactFileResolver, versionOverrideResolver, new HashSet<>(processedFeaturePacks)));
             }
-            return new FeaturePack(artifactFile, artifactCoords, description, dependencies, delegatingArtifactResolver, configurationFiles, modulesFiles, contentFiles);
+            return new FeaturePack(artifactFile, artifactCoords, description, dependencies, artifactResolver, configurationFiles, modulesFiles, contentFiles);
         } catch (Throwable e) {
             throw new RuntimeException("Failed to create feature pack from " + artifactCoords, e);
         }

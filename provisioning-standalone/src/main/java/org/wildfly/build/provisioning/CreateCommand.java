@@ -20,11 +20,7 @@ import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionXmlWriter;
 
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamWriter;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -101,30 +97,10 @@ public class CreateCommand {
             }
             description.getFeaturePacks().add(new ServerProvisioningDescription.FeaturePack(pack.name, null, null, null, subsystems));
         }
-
         try {
-            FileOutputStream out = new FileOutputStream(file);
-
-            try {
-                XMLStreamWriter writer = XMLOutputFactory.newInstance().createXMLStreamWriter(out);
-                ServerProvisioningDescriptionXmlWriter.INSTANCE.writeContent(writer, description);
-                writer.flush();
-                writer.close();
-            } finally {
-                safeClose(out);
-            }
+            ServerProvisioningDescriptionXmlWriter.INSTANCE.writeContent(new File(file), description);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private static void safeClose(FileOutputStream out) {
-        if(out != null) {
-            try {
-                out.close();
-            } catch (IOException e) {
-                StandaloneProvisioningLogger.ROOT_LOGGER.debugf("Failed to close %s", out);
-            }
         }
     }
 

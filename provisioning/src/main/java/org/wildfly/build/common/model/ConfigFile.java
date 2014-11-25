@@ -16,7 +16,18 @@
 
 package org.wildfly.build.common.model;
 
+import org.wildfly.build.configassembly.SubsystemConfig;
+import org.wildfly.build.configassembly.SubsystemsParser;
+import org.wildfly.build.util.InputStreamSource;
+import org.wildfly.build.util.ZipEntryInputStreamSource;
+
+import javax.xml.stream.XMLStreamException;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  *
@@ -51,5 +62,25 @@ public class ConfigFile {
 
     public String getOutputFile() {
         return outputFile;
+    }
+
+    /**
+     * Retrieves the subsystems configs.
+     * @param featurePackFile the feature pack's file containing the subsystem configs
+     * @return
+     * @throws IOException
+     * @throws XMLStreamException
+     */
+    public Map<String, Map<String, SubsystemConfig>> getSubsystemConfigs(File featurePackFile) throws IOException, XMLStreamException {
+        Map<String, Map<String, SubsystemConfig>> subsystems = new HashMap<>();
+        try (ZipFile zip = new ZipFile(featurePackFile)) {
+            ZipEntry zipEntry = zip.getEntry(getSubsystems());
+            if (zipEntry == null) {
+                throw new RuntimeException("Feature pack " + featurePackFile + " subsystems file " + getSubsystems() + " not found");
+            }
+            InputStreamSource inputStreamSource = new ZipEntryInputStreamSource(featurePackFile, zipEntry);
+            SubsystemsParser.parse(inputStreamSource, getProperties(), subsystems);
+        }
+        return subsystems;
     }
 }
