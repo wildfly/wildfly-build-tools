@@ -128,15 +128,8 @@ public class ServerProvisioner {
 
     private static void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         for (CopyArtifact copyArtifact : copyArtifacts) {
-            if (!filesProcessed.add(copyArtifact.getToLocation())) {
-                continue;
-            }
-            File target = new File(outputDirectory, copyArtifact.getToLocation());
-            if (!target.getParentFile().isDirectory()) {
-                if (!target.getParentFile().mkdirs()) {
-                    throw new IOException("Could not create directory " + target.getParentFile());
-                }
-            }
+
+            //first resolve the artifact
             Artifact artifact = artifactResolver.getArtifact(copyArtifact.getArtifact());
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve artifact " + copyArtifact.getArtifact() + " to copy");
@@ -144,6 +137,23 @@ public class ServerProvisioner {
             File artifactFile = artifactFileResolver.getArtifactFile(artifact);
             if (artifactFile == null) {
                 throw new RuntimeException("Could not resolve file for artifact " + copyArtifact.getArtifact() + " to copy");
+            }
+
+            String location = copyArtifact.getToLocation();
+            if(location.endsWith("/")) {
+                //if the to location ends with a / then it is a directory
+                //so we need to append the artifact name
+                location += artifactFile.getName();
+            }
+
+            if (!filesProcessed.add(location)) {
+                continue;
+            }
+            File target = new File(outputDirectory, location);
+            if (!target.getParentFile().isDirectory()) {
+                if (!target.getParentFile().mkdirs()) {
+                    throw new IOException("Could not create directory " + target.getParentFile());
+                }
             }
             if (copyArtifact.isExtract()) {
                 extractArtifact(artifactFile, target, copyArtifact);
