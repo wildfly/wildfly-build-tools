@@ -67,6 +67,7 @@
         <version.org.apache.maven.plugin-tools>${version.plugin.plugin}</version.org.apache.maven.plugin-tools>
         <version.org.codehaus.plexus.plexus-utils>3.0.10</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
+        <version.org.jboss.forge>2.12.2.Final</version.org.jboss.forge>
         <version.org.jboss.jandex>1.2.1.Final</version.org.jboss.jandex>
         <version.org.jboss.logging>3.1.4.GA</version.org.jboss.logging>
         <version.org.jboss.logging.processor>1.2.0.Final</version.org.jboss.logging.processor>
@@ -88,6 +89,7 @@
         <module>provisioning</module>
         <module>provisioning-maven-plugin</module>
         <module>provisioning-standalone</module>
+        <module>provisioning-forge-addon</module>
     </modules>
 
     <build>
@@ -219,6 +221,25 @@
 
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>wildfly-server-provisioning-forge-addon</artifactId>
+                <classifier>forge-addon</classifier>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>wildfly-server-provisioning-forge-addon-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>wildfly-server-provisioning-forge-addon-impl</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>wildfly-server-provisioning-maven-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -273,12 +294,6 @@
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-model-builder</artifactId>
                 <version>${version.org.apache.maven.maven-core}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss</groupId>
-                <artifactId>staxmapper</artifactId>
-                <version>${version.org.jboss.staxmapper}</version>
             </dependency>
 
             <!-- dependencies to annotations -->
@@ -347,27 +362,23 @@
             </dependency>
 
             <dependency>
-                <groupId>org.sonatype.aether</groupId>
-                <artifactId>aether-api</artifactId>
-                <version>${version.org.sonatype.aether}</version>
-                <scope>provided</scope>
-                <!-- Used in maven 3.0.x -->
-                <optional>true</optional>
-            </dependency>
-
-            <dependency>
-                <groupId>org.sonatype.aether</groupId>
-                <artifactId>aether-util</artifactId>
-                <version>${version.org.sonatype.aether}</version>
-                <scope>provided</scope>
-                <!-- Used in maven 3.0.x -->
-                <optional>true</optional>
+                <groupId>org.jboss</groupId>
+                <artifactId>jandex</artifactId>
+                <version>${version.org.jboss.jandex}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.jboss</groupId>
-                <artifactId>jandex</artifactId>
-                <version>${version.org.jboss.jandex}</version>
+                <artifactId>staxmapper</artifactId>
+                <version>${version.org.jboss.staxmapper}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jboss.forge</groupId>
+                <artifactId>forge-bom</artifactId>
+                <version>${version.org.jboss.forge}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>
@@ -393,6 +404,24 @@
                 <groupId>org.jboss.logmanager</groupId>
                 <artifactId>jboss-logmanager</artifactId>
                 <version>${version.org.jboss.logmanager}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.sonatype.aether</groupId>
+                <artifactId>aether-api</artifactId>
+                <version>${version.org.sonatype.aether}</version>
+                <scope>provided</scope>
+                <!-- Used in maven 3.0.x -->
+                <optional>true</optional>
+            </dependency>
+
+            <dependency>
+                <groupId>org.sonatype.aether</groupId>
+                <artifactId>aether-util</artifactId>
+                <version>${version.org.sonatype.aether}</version>
+                <scope>provided</scope>
+                <!-- Used in maven 3.0.x -->
+                <optional>true</optional>
             </dependency>
 
             <dependency>
@@ -429,7 +458,6 @@
                 <version>${version.junit}</version>
                 <scope>test</scope>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 

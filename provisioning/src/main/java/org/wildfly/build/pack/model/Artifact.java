@@ -92,6 +92,11 @@ public class Artifact implements Comparable<Artifact> {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return getGACE().toString() + ':' + version;
+    }
+
     public static class GACE implements Comparable<GACE> {
 
         private final String groupId;

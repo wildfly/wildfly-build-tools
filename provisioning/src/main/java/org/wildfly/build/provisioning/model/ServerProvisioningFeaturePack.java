@@ -5,11 +5,8 @@ import org.wildfly.build.Locations;
 import org.wildfly.build.common.model.ConfigFileOverride;
 import org.wildfly.build.common.model.ConfigOverride;
 import org.wildfly.build.configassembly.SubsystemConfig;
-import org.wildfly.build.configassembly.SubsystemsParser;
 import org.wildfly.build.pack.model.FeaturePack;
 import org.wildfly.build.pack.model.ModuleIdentifier;
-import org.wildfly.build.util.InputStreamSource;
-import org.wildfly.build.util.ZipEntryInputStreamSource;
 import org.wildfly.build.util.ZipFileSubsystemInputStreamSources;
 
 import javax.xml.stream.XMLStreamException;
@@ -22,8 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * @author Eduardo Martins
@@ -202,7 +197,7 @@ public class ServerProvisioningFeaturePack {
                 // 1. collect all subsystem templates from each subsystem module
                 ZipFileSubsystemInputStreamSources subsystemInputStreamSources = new ZipFileSubsystemInputStreamSources();
                 for (ServerProvisioningDescription.FeaturePack.Subsystem subsystem : subsystems) {
-                    final String subsystemName = subsystem.getName() + ".xml";
+                    final String subsystemName = subsystem.getName().endsWith(".xml") ? subsystem.getName() : subsystem.getName() + ".xml";
                     FeaturePack.Module module = featurePack.getSubsystemModule(subsystemName, artifactFileResolver);
                     if (module == null) {
                         throw new RuntimeException("Subsystem " + subsystemName + " module not found in feature pack " + featurePack.getFeaturePackFile() + " and dependencies");
@@ -233,7 +228,7 @@ public class ServerProvisioningFeaturePack {
     private static void createConfigFileOverridesFromSubsystems(File featurePackFile, List<org.wildfly.build.common.model.ConfigFile> configFiles, ZipFileSubsystemInputStreamSources subsystemInputStreamSources, Map<String, ConfigFileOverride> configFileOverrides) throws IOException, XMLStreamException {
         for (org.wildfly.build.common.model.ConfigFile configFile : configFiles) {
             // parse subsystems
-            Map<String, Map<String, SubsystemConfig>> subsystems = ConfigFile.parseSubsystems(featurePackFile, configFile);
+            Map<String, Map<String, SubsystemConfig>> subsystems = configFile.getSubsystemConfigs(featurePackFile);
             // remove the subsystems which templates were not found in the subsystem modules
             Iterator<Map<String, SubsystemConfig>> subsystemsIterator = subsystems.values().iterator();
             while (subsystemsIterator.hasNext()) {
@@ -322,23 +317,10 @@ public class ServerProvisioningFeaturePack {
             if (subsystems == null) {
                 if (configFileOverride == null || configFileOverride.getSubsystems() == null) {
                     // parse the feature pack's config subsystems file and include all
-                    subsystems = parseSubsystems(featurePackFile, featurePackConfigFile);
+                    subsystems = featurePackConfigFile.getSubsystemConfigs(featurePackFile);
                 } else {
                     subsystems = configFileOverride.getSubsystems();
                 }
-            }
-            return subsystems;
-        }
-
-        public static Map<String, Map<String, SubsystemConfig>> parseSubsystems(File featurePackFile, org.wildfly.build.common.model.ConfigFile featurePackConfigFile) throws IOException, XMLStreamException {
-            Map<String, Map<String, SubsystemConfig>> subsystems = new HashMap<>();
-            try (ZipFile zip = new ZipFile(featurePackFile)) {
-                ZipEntry zipEntry = zip.getEntry(featurePackConfigFile.getSubsystems());
-                if (zipEntry == null) {
-                    throw new RuntimeException("Feature pack " + featurePackFile + " subsystems file " + featurePackConfigFile.getSubsystems() + " not found");
-                }
-                InputStreamSource inputStreamSource = new ZipEntryInputStreamSource(featurePackFile, zipEntry);
-                SubsystemsParser.parse(inputStreamSource, featurePackConfigFile.getProperties(), subsystems);
             }
             return subsystems;
         }
