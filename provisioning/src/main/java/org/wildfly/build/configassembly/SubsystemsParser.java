@@ -25,7 +25,7 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
@@ -104,7 +104,7 @@ public class SubsystemsParser {
         if (result.containsKey(name)) {
             throw new XMLStreamException("Already have a subsystems named " + name, reader.getLocation());
         }
-        Map<String, SubsystemConfig> subsystems = new HashMap<>();
+        Map<String, SubsystemConfig> subsystems = new LinkedHashMap<>();
         parseSubsystem(reader, propertyReplacer, subsystems);
         result.put(name, subsystems);
     }

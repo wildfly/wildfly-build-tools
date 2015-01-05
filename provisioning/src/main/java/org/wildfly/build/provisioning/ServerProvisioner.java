@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -350,13 +351,13 @@ public class ServerProvisioner {
         // merge the subsystems in the provisioning config file
         for (Map.Entry<String, Map<String, SubsystemConfig>> subsystemsEntry : subsystems.entrySet()) {
             // get the subsystems in the provisioning config file
-            String subsystemsName = subsystemsEntry.getKey();
+            String profileName = subsystemsEntry.getKey();
             Map<String, SubsystemConfig> subsystemConfigMap = subsystemsEntry.getValue();
-            Map<String, SubsystemConfig> provisioningSubsystems = provisioningConfigFile.getSubsystems().get(subsystemsName);
+            Map<String, SubsystemConfig> provisioningSubsystems = provisioningConfigFile.getSubsystems().get(profileName);
             if (provisioningSubsystems == null) {
                 // do not exist yet, create it
-                provisioningSubsystems = new HashMap<>();
-                provisioningConfigFile.getSubsystems().put(subsystemsName, provisioningSubsystems);
+                provisioningSubsystems = new LinkedHashMap<>();
+                provisioningConfigFile.getSubsystems().put(profileName, provisioningSubsystems);
             }
             // add the 'new' subsystem configs and related input stream sources
             for (Map.Entry<String, SubsystemConfig> subsystemConfigMapEntry : subsystemConfigMap.entrySet()) {

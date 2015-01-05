@@ -16,7 +16,7 @@
 package org.wildfly.build.configassembly;
 
 import java.io.File;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.wildfly.build.util.BaseDirSubsystemInputStreamSources;
@@ -45,7 +45,7 @@ public class DomainMain {
         File outputFile = new File(args[3]);
 
         SubsystemInputStreamSources subsystemInputStreamSources = new BaseDirSubsystemInputStreamSources(baseDir.getAbsoluteFile());
-        Map<String, Map<String, SubsystemConfig>> subsystems = new HashMap<>();
+        Map<String, Map<String, SubsystemConfig>> subsystems = new LinkedHashMap<>();
         SubsystemsParser.parse(new FileInputStreamSource(subsystemsFile), subsystems);
         ConfigurationAssembler assembler = new ConfigurationAssembler(subsystemInputStreamSources, new FileInputStreamSource(templateFile), "domain", subsystems, outputFile);
         assembler.assemble();

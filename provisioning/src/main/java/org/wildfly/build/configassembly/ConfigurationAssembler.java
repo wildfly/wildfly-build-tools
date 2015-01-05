@@ -86,10 +86,10 @@ public class ConfigurationAssembler {
         final Map<String, Map<String, ElementNode>> socketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
         final Map<String, Map<String, ElementNode>> outboundSocketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
         for (Map.Entry<String, ProcessingInstructionNode> subsystemEntry : templateParser.getSubsystemPlaceholders().entrySet()) {
-            final String subsystemName = subsystemEntry.getKey();
+            final String profileName = subsystemEntry.getKey();
             final String groupName = subsystemEntry.getValue().getDataValue("socket-binding-group", "");
 
-            final Map<String, SubsystemConfig> subsystems = subsystemsConfigs.get(subsystemName);
+            final Map<String, SubsystemConfig> subsystems = subsystemsConfigs.get(profileName);
             if (subsystems == null) {
                 throw new IllegalStateException("Could not find a subsystems configuration called '" + subsystemEntry.getKey());
             }
