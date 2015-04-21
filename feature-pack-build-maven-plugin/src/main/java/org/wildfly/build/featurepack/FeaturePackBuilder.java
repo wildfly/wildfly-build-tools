@@ -205,6 +205,9 @@ public class FeaturePackBuilder {
         }
         // line endings
         final Path baseDirPath = Paths.get(baseDir.getAbsolutePath());
+        if (!Files.exists(baseDirPath)){
+            return;
+        }
         Files.walkFileTree(baseDirPath, new SimpleFileVisitor<Path>() {
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
