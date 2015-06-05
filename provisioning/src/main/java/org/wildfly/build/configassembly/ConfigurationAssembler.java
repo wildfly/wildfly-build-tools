@@ -85,6 +85,7 @@ public class ConfigurationAssembler {
         final Set<String> extensions = new TreeSet<String>();
         final Map<String, Map<String, ElementNode>> socketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
         final Map<String, Map<String, ElementNode>> outboundSocketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
+        final Map<String, ElementNode> interfaces = new TreeMap<String, ElementNode>();
         for (Map.Entry<String, ProcessingInstructionNode> subsystemEntry : templateParser.getSubsystemPlaceholders().entrySet()) {
             final String profileName = subsystemEntry.getKey();
             final String groupName = subsystemEntry.getValue().getDataValue("socket-binding-group", "");
@@ -120,6 +121,9 @@ public class ConfigurationAssembler {
                         throw new IllegalStateException("Outbound SocketBinding '" + entry + "' already exists");
                     }
                     outboundSocketBindings.put(entry.getKey(), entry.getValue());
+                }
+                for (Map.Entry<String, ElementNode> entry : subsystemParser.getInterfaces().entrySet()) {
+                        interfaces.put(entry.getKey(), entry.getValue());
                 }
             }
         }
@@ -165,6 +169,12 @@ public class ConfigurationAssembler {
                         entry.getValue().addDelegate(binding);
                     }
                 }
+            }
+        }
+        if (interfaces.size() > 0) {
+            final ProcessingInstructionNode interfacesNode = templateParser.getInterfacesPlaceHolders();
+            for (ElementNode interfaceElement : interfaces.values()) {
+                interfacesNode.addDelegate(interfaceElement);
             }
         }
     }

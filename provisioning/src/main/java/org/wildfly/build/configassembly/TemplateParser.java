@@ -34,12 +34,14 @@ import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
 /**
  *
  * @author <a href="kabir.khan@jboss.com">Kabir Khan</a>
+ * @author <a href=mailto:tadamski@redhat.com>Tomasz Adamski</a>
  */
 public class TemplateParser extends NodeParser {
 
     private static final String SOCKET_BINDINGS_PI = "SOCKET-BINDINGS";
     private static final String EXTENSIONS_PI = "EXTENSIONS";
     private static final String SUBSYSTEMS_PI = "SUBSYSTEMS";
+    private static final String INTERFACES_PI = "INTERFACES";
 
     private final InputStreamSource inputStreamSource;
     private final String rootElementName;
@@ -47,6 +49,7 @@ public class TemplateParser extends NodeParser {
     private ProcessingInstructionNode extensionPlaceholder;
     private final Map<String, ProcessingInstructionNode> subsystemPlaceHolders = new HashMap<String, ProcessingInstructionNode>();
     private final Map<String, ProcessingInstructionNode> socketBindingsPlaceHolder = new HashMap<String, ProcessingInstructionNode>();
+    private ProcessingInstructionNode interfacesPlaceHolder;
 
     public TemplateParser(InputStreamSource inputStreamSource, String rootElementName) {
         this.inputStreamSource = inputStreamSource;
@@ -67,6 +70,10 @@ public class TemplateParser extends NodeParser {
 
     public Map<String, ProcessingInstructionNode> getSocketBindingsPlaceHolders() {
         return socketBindingsPlaceHolder;
+    }
+
+    public ProcessingInstructionNode getInterfacesPlaceHolders() {
+        return interfacesPlaceHolder;
     }
 
     public void parse() throws IOException, XMLStreamException {
@@ -116,12 +123,24 @@ public class TemplateParser extends NodeParser {
             if (!data.isEmpty()) {
                 throw new IllegalStateException("<?" + TemplateParser.SOCKET_BINDINGS_PI + "?> should not take any data");
             }
-
             String groupName = parent.getAttributeValue("name", "");
             node = new ProcessingInstructionNode(TemplateParser.SOCKET_BINDINGS_PI, data);
             socketBindingsPlaceHolder.put(groupName, node);
+        } else if (pi.equals(TemplateParser.INTERFACES_PI)) {
+            if (!parent.getName().equals("interfaces")) {
+                throw new IllegalStateException("<?" + TemplateParser.INTERFACES_PI + "?> must be a child of <interfaces> " + reader.getLocation());
+            }
+            if (!data.isEmpty()) {
+                throw new IllegalStateException("<?" + TemplateParser.INTERFACES_PI + "?> should not take any data");
+            }
+            if (interfacesPlaceHolder!= null) {
+                throw new IllegalStateException("Can only have one occurrence of <?" + TemplateParser.INTERFACES_PI + "?>");
+            }
+            node = new ProcessingInstructionNode(TemplateParser.INTERFACES_PI, data);
+            interfacesPlaceHolder = node;
         } else {
             throw new IllegalStateException("Unknown processing instruction <?" + reader.getPITarget() + "?>" + reader.getLocation());
-        }        return node;
+        }
+        return node;
     }
 }
