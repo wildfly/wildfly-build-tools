@@ -56,6 +56,7 @@ class SubsystemParser extends NodeParser {
     private final Map<String, Set<ProcessingInstructionNode>> supplementPlaceholders = new HashMap<String, Set<ProcessingInstructionNode>>();
     private final Map<String, Supplement> supplementReplacements = new HashMap<String, Supplement>();
     private final Map<String, List<AttributeValue>> attributesForReplacement = new HashMap<String, List<AttributeValue>>();
+    private final Map<String, ElementNode> interfaces = new HashMap<String, ElementNode>();
 
     SubsystemParser(String socketBindingNamespace, String supplementName, InputStreamSource inputStreamSource){
         this.socketBindingNamespace = socketBindingNamespace;
@@ -73,6 +74,10 @@ class SubsystemParser extends NodeParser {
 
     Map<String, ElementNode> getSocketBindings(){
         return socketBindings;
+    }
+
+    Map<String, ElementNode> getInterfaces(){
+        return interfaces;
     }
 
     Map<String, ElementNode> getOutboundSocketBindings(){
@@ -105,6 +110,9 @@ class SubsystemParser extends NodeParser {
                     } else if (reader.getLocalName().equals("outbound-socket-binding")) {
                         ElementNode socketBinding = new NodeParser(socketBindingNamespace).parseNode(reader, "outbound-socket-binding");
                         outboundSocketBindings.put(socketBinding.getAttributeValue("name"), socketBinding);
+                    } else if (reader.getLocalName().equals("interface")) {
+                        ElementNode iface = new NodeParser(socketBindingNamespace).parseNode(reader, "interface");
+                        interfaces.put(iface.getAttributeValue("name"), iface);
                     }
                 }
             }
