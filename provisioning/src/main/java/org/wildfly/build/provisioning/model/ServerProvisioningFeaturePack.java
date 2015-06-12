@@ -46,6 +46,11 @@ public class ServerProvisioningFeaturePack {
     private final List<ConfigFile> domainConfigFiles;
 
     /**
+     * the host config files
+     */
+    private final List<ConfigFile> hostConfigFiles;
+
+    /**
      * the artifact file resolver
      */
     private final ArtifactFileResolver artifactFileResolver;
@@ -65,6 +70,7 @@ public class ServerProvisioningFeaturePack {
         ConfigOverride configOverride = getConfigOverride(featurePack, description, artifactFileResolver);
         this.standaloneConfigFiles = createStandaloneConfigFiles(featurePack, configOverride);
         this.domainConfigFiles = createDomainConfigFiles(featurePack, configOverride);
+        this.hostConfigFiles = createHostConfigFiles(featurePack, configOverride);
     }
 
     /**
@@ -108,6 +114,13 @@ public class ServerProvisioningFeaturePack {
                     }
                 }
                 for (ConfigFile configFile : getDomainConfigFiles()) {
+                    for (Map<String, SubsystemConfig> subsystemConfigMap : configFile.getSubsystems().values()) {
+                        for (String subsystem : subsystemConfigMap.keySet()) {
+                            subsystems.add(subsystem);
+                        }
+                    }
+                }
+                for (ConfigFile configFile : getHostConfigFiles()) {
                     for (Map<String, SubsystemConfig> subsystemConfigMap : configFile.getSubsystems().values()) {
                         for (String subsystem : subsystemConfigMap.keySet()) {
                             subsystems.add(subsystem);
@@ -175,6 +188,10 @@ public class ServerProvisioningFeaturePack {
         return standaloneConfigFiles;
     }
 
+    public List<ConfigFile> getHostConfigFiles() {
+        return hostConfigFiles;
+    }
+
     /**
      * Retrieves the {@link org.wildfly.build.common.model.ConfigOverride} to use when provisioning the feature pack.
      *
@@ -211,6 +228,7 @@ public class ServerProvisioningFeaturePack {
                 // 2. create config file override for each feature pack config file
                 createConfigFileOverridesFromSubsystems(featurePack.getFeaturePackFile(), featurePack.getDescription().getConfig().getStandaloneConfigFiles(), subsystemInputStreamSources, configOverride.getStandaloneConfigFiles());
                 createConfigFileOverridesFromSubsystems(featurePack.getFeaturePackFile(), featurePack.getDescription().getConfig().getDomainConfigFiles(), subsystemInputStreamSources, configOverride.getDomainConfigFiles());
+                createConfigFileOverridesFromSubsystems(featurePack.getFeaturePackFile(), featurePack.getDescription().getConfig().getHostConfigFiles(), subsystemInputStreamSources, configOverride.getHostConfigFiles());
             }
         }
         return configOverride;
@@ -261,6 +279,19 @@ public class ServerProvisioningFeaturePack {
     private static List<ConfigFile> createStandaloneConfigFiles(FeaturePack featurePack, ConfigOverride configOverride) {
         final List<org.wildfly.build.common.model.ConfigFile> configFiles = featurePack.getDescription().getConfig().getStandaloneConfigFiles();
         final Map<String, ConfigFileOverride> configFileOverrides = configOverride != null ? configOverride.getStandaloneConfigFiles() : null;
+        return createConfigFiles(featurePack.getFeaturePackFile(), configFiles, configOverride, configFileOverrides);
+    }
+
+
+    /**
+     * Creates the provisioning standalone config files.
+     * @param featurePack
+     * @param configOverride
+     * @return
+     */
+    private static List<ConfigFile> createHostConfigFiles(FeaturePack featurePack, ConfigOverride configOverride) {
+        final List<org.wildfly.build.common.model.ConfigFile> configFiles = featurePack.getDescription().getConfig().getHostConfigFiles();
+        final Map<String, ConfigFileOverride> configFileOverrides = configOverride != null ? configOverride.getHostConfigFiles() : null;
         return createConfigFiles(featurePack.getFeaturePackFile(), configFiles, configOverride, configFileOverrides);
     }
 

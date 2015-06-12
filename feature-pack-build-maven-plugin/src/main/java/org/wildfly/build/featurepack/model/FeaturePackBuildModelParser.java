@@ -30,6 +30,7 @@ import org.wildfly.build.util.PropertyResolver;
 public class FeaturePackBuildModelParser {
 
     private static final QName ROOT_1_0 = new QName(FeaturePackBuildModelParser10.NAMESPACE_1_0, FeaturePackBuildModelParser10.Element.BUILD.getLocalName());
+    private static final QName ROOT_1_1 = new QName(FeaturePackBuildModelParser11.NAMESPACE_1_1, FeaturePackBuildModelParser10.Element.BUILD.getLocalName());
 
     private static final XMLInputFactory INPUT_FACTORY = XMLInputFactory.newInstance();
 
@@ -38,6 +39,7 @@ public class FeaturePackBuildModelParser {
     public FeaturePackBuildModelParser(PropertyResolver properties) {
         mapper = XMLMapper.Factory.create();
         mapper.registerRootElement(ROOT_1_0, new FeaturePackBuildModelParser10(properties));
+        mapper.registerRootElement(ROOT_1_1, new FeaturePackBuildModelParser11(properties));
     }
 
     public FeaturePackBuild parse(final InputStream input) throws XMLStreamException {

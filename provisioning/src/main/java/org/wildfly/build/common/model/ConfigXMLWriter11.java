@@ -28,11 +28,11 @@ import static org.wildfly.build.common.model.ConfigModelParser10.Element;
  *
  * @author Eduardo Martins
  */
-public class ConfigXMLWriter10 {
+public class ConfigXMLWriter11 {
 
-    public static final ConfigXMLWriter10 INSTANCE = new ConfigXMLWriter10();
+    public static final ConfigXMLWriter11 INSTANCE = new ConfigXMLWriter11();
 
-    private ConfigXMLWriter10() {
+    private ConfigXMLWriter11() {
     }
 
     public void write(Config config, ElementNode parentElementNode) {
@@ -47,6 +47,11 @@ public class ConfigXMLWriter10 {
                 final ElementNode domainElementNode = new ElementNode(parentElementNode, Element.DOMAIN.getLocalName());
                 writeConfigFile(configFile, domainElementNode);
                 configElementNode.addChild(domainElementNode);
+            }
+            for (ConfigFile configFile : config.getHostConfigFiles()) {
+                final ElementNode hostElementNode = new ElementNode(parentElementNode, Element.HOST.getLocalName());
+                writeConfigFile(configFile, hostElementNode);
+                configElementNode.addChild(hostElementNode);
             }
             parentElementNode.addChild(configElementNode);
         }

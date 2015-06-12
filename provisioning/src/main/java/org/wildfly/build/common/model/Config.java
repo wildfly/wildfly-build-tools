@@ -28,6 +28,7 @@ public class Config {
 
     private final List<ConfigFile> standaloneConfigFiles = new ArrayList<>();
     private final List<ConfigFile> domainConfigFiles = new ArrayList<>();
+    private final List<ConfigFile> hostConfigFiles = new ArrayList<>();
 
     public List<ConfigFile> getStandaloneConfigFiles() {
         return standaloneConfigFiles;
@@ -35,5 +36,9 @@ public class Config {
 
     public List<ConfigFile> getDomainConfigFiles() {
         return domainConfigFiles;
+    }
+
+    public List<ConfigFile> getHostConfigFiles() {
+        return hostConfigFiles;
     }
 }

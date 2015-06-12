@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.wildfly.build.common.model;
 
 import org.wildfly.build.util.BuildPropertyReplacer;
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
  * @author Eduardo Martins
  */
-public class ConfigModelParser10 {
+public class ConfigModelParser11 {
 
     public static final String ELEMENT_LOCAL_NAME = "config";
 
@@ -42,7 +43,7 @@ public class ConfigModelParser10 {
         STANDALONE("standalone"),
         DOMAIN("domain"),
         PROPERTY("property"),
-        HOST("host")
+        HOST("host"),
         ;
 
         private static final Map<String, Element> elements;
@@ -52,6 +53,7 @@ public class ConfigModelParser10 {
             elementsMap.put(Element.STANDALONE.getLocalName(), Element.STANDALONE);
             elementsMap.put(Element.DOMAIN.getLocalName(), Element.DOMAIN);
             elementsMap.put(Element.PROPERTY.getLocalName(), Element.PROPERTY);
+            elementsMap.put(Element.HOST.getLocalName(), Element.HOST);
             elements = elementsMap;
         }
 
@@ -122,7 +124,7 @@ public class ConfigModelParser10 {
 
     private final BuildPropertyReplacer propertyReplacer;
 
-    public ConfigModelParser10(BuildPropertyReplacer propertyReplacer) {
+    public ConfigModelParser11(BuildPropertyReplacer propertyReplacer) {
         this.propertyReplacer = propertyReplacer;
     }
 
@@ -140,6 +142,9 @@ public class ConfigModelParser10 {
                             break;
                         case DOMAIN:
                             parseConfigFile(reader, result.getDomainConfigFiles());
+                            break;
+                        case HOST:
+                            parseConfigFile(reader, result.getHostConfigFiles());
                             break;
                         default:
                             throw ParsingUtils.unexpectedContent(reader);

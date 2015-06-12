@@ -15,7 +15,7 @@
  */
 package org.wildfly.build.pack.model;
 
-import org.wildfly.build.common.model.ConfigXMLWriter10;
+import org.wildfly.build.common.model.ConfigXMLWriter11;
 import org.wildfly.build.common.model.CopyArtifactsXMLWriter10;
 import org.wildfly.build.common.model.FilePermissionsXMLWriter10;
 import org.wildfly.build.util.xml.AttributeValue;
@@ -39,18 +39,18 @@ import static org.wildfly.build.pack.model.FeaturePackDescriptionXMLParser10.Ele
  *
  * @author Eduardo Martins
  */
-public class FeaturePackDescriptionXMLWriter10 {
+public class FeaturePackDescriptionXMLWriter11 {
 
-    public static final FeaturePackDescriptionXMLWriter10 INSTANCE = new FeaturePackDescriptionXMLWriter10();
+    public static final FeaturePackDescriptionXMLWriter11 INSTANCE = new FeaturePackDescriptionXMLWriter11();
 
-    private FeaturePackDescriptionXMLWriter10() {
+    private FeaturePackDescriptionXMLWriter11() {
     }
 
     public void write(FeaturePackDescription featurePackDescription, File outputFile) throws XMLStreamException, IOException {
-        final ElementNode featurePackElementNode = new ElementNode(null, Element.FEATURE_PACK.getLocalName(), FeaturePackDescriptionXMLParser10.NAMESPACE_1_0);
+        final ElementNode featurePackElementNode = new ElementNode(null, Element.FEATURE_PACK.getLocalName(), FeaturePackDescriptionXMLParser11.NAMESPACE_1_1);
         processDependencies(featurePackDescription.getDependencies(), featurePackElementNode);
         processArtifactVersions(featurePackDescription.getArtifactVersions(), featurePackElementNode);
-        ConfigXMLWriter10.INSTANCE.write(featurePackDescription.getConfig(), featurePackElementNode);
+        ConfigXMLWriter11.INSTANCE.write(featurePackDescription.getConfig(), featurePackElementNode);
         CopyArtifactsXMLWriter10.INSTANCE.write(featurePackDescription.getCopyArtifacts(), featurePackElementNode);
         FilePermissionsXMLWriter10.INSTANCE.write(featurePackDescription.getFilePermissions(), featurePackElementNode);
         FormattingXMLStreamWriter writer = new FormattingXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(new BufferedWriter(new FileWriter(outputFile))));

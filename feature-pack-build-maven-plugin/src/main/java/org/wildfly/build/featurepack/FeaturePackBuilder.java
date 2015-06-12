@@ -26,7 +26,7 @@ import org.wildfly.build.common.model.CopyArtifact;
 import org.wildfly.build.pack.model.FeaturePack;
 import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
 import org.wildfly.build.pack.model.FeaturePackDescription;
-import org.wildfly.build.pack.model.FeaturePackDescriptionXMLWriter10;
+import org.wildfly.build.pack.model.FeaturePackDescriptionXMLWriter11;
 import org.wildfly.build.pack.model.FeaturePackFactory;
 import org.wildfly.build.common.model.FileFilter;
 import org.wildfly.build.pack.model.ModuleIdentifier;
@@ -232,7 +232,7 @@ public class FeaturePackBuilder {
 
     private static void writeFeaturePackXml(FeaturePackDescription featurePackDescription, File serverDirectory) throws IOException, XMLStreamException {
         final File outputFile = new File(serverDirectory, Locations.FEATURE_PACK_DESCRIPTION);
-        FeaturePackDescriptionXMLWriter10.INSTANCE.write(featurePackDescription, outputFile);
+        FeaturePackDescriptionXMLWriter11.INSTANCE.write(featurePackDescription, outputFile);
     }
 
     private static void toUnixLineEndings(Path file) throws IOException {

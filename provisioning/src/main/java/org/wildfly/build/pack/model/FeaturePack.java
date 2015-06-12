@@ -175,6 +175,11 @@ public class FeaturePack {
                 result.addAll(subsystems.keySet());
             }
         }
+        for (ConfigFile configFile : description.getConfig().getHostConfigFiles()) {
+            for (Map<String, SubsystemConfig> subsystems : configFile.getSubsystemConfigs(featurePackFile).values()) {
+                result.addAll(subsystems.keySet());
+            }
+        }
         return result;
     }
 

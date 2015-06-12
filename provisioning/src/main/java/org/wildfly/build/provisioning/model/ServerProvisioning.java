@@ -83,6 +83,7 @@ public class ServerProvisioning {
         private final ZipFileSubsystemInputStreamSources inputStreamSources = new ZipFileSubsystemInputStreamSources();
         private final Map<String, ConfigFile> standaloneConfigFiles = new HashMap<>();
         private final Map<String, ConfigFile> domainConfigFiles = new HashMap<>();
+        private final Map<String, ConfigFile> hostConfigFiles = new HashMap<>();
 
         public Map<String, ConfigFile> getStandaloneConfigFiles() {
             return standaloneConfigFiles;
@@ -94,6 +95,10 @@ public class ServerProvisioning {
 
         public ZipFileSubsystemInputStreamSources getInputStreamSources() {
             return inputStreamSources;
+        }
+
+        public Map<String, ConfigFile> getHostConfigFiles() {
+            return hostConfigFiles;
         }
     }
 

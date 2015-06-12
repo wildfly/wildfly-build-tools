@@ -310,6 +310,20 @@ public class ServerProvisioner {
                     new File(outputDirectory, provisioningConfigFile.getOutputFile()))
                     .assemble();
         }
+        for (ServerProvisioning.ConfigFile provisioningConfigFile : provisioningConfig.getHostConfigFiles().values()) {
+            if (provisioningConfigFile.getTemplateInputStreamSource() == null) {
+                getLog().debugf("Skipping assembly of config file %s, template not set.", provisioningConfigFile.getOutputFile());
+                continue;
+            }
+            getLog().debugf("Assembling config file %s", provisioningConfigFile.getOutputFile());
+            filesProcessed.add(provisioningConfigFile.getOutputFile());
+            new ConfigurationAssembler(provisioningConfig.getInputStreamSources(),
+                    provisioningConfigFile.getTemplateInputStreamSource(),
+                    "host",
+                    provisioningConfigFile.getSubsystems(),
+                    new File(outputDirectory, provisioningConfigFile.getOutputFile()))
+                    .assemble();
+        }
     }
 
     private static void processFeaturePackConfig(ServerProvisioningFeaturePack provisioningFeaturePack, ServerProvisioning.Config provisioningConfig) throws IOException, XMLStreamException {
@@ -321,6 +335,9 @@ public class ServerProvisioner {
             }
             for (ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile : provisioningFeaturePack.getStandaloneConfigFiles()) {
                 processFeaturePackConfigFile(serverProvisioningFeaturePackConfigFile, zipFile, provisioningFeaturePack, provisioningConfig.getStandaloneConfigFiles());
+            }
+            for (ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile : provisioningFeaturePack.getHostConfigFiles()) {
+                processFeaturePackConfigFile(serverProvisioningFeaturePackConfigFile, zipFile, provisioningFeaturePack, provisioningConfig.getHostConfigFiles());
             }
         }
     }

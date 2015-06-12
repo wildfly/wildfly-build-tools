@@ -31,6 +31,7 @@ import java.io.InputStream;
 public class FeaturePackDescriptionXMLParser {
 
     private static final QName ROOT_1_0 = new QName(FeaturePackDescriptionXMLParser10.NAMESPACE_1_0, FeaturePackDescriptionXMLParser10.Element.FEATURE_PACK.getLocalName());
+    private static final QName ROOT_1_1 = new QName(FeaturePackDescriptionXMLParser11.NAMESPACE_1_1, FeaturePackDescriptionXMLParser10.Element.FEATURE_PACK.getLocalName());
 
     private static final XMLInputFactory INPUT_FACTORY = XMLInputFactory.newInstance();
 
@@ -39,6 +40,7 @@ public class FeaturePackDescriptionXMLParser {
     public FeaturePackDescriptionXMLParser(PropertyResolver properties) {
         mapper = XMLMapper.Factory.create();
         mapper.registerRootElement(ROOT_1_0, new FeaturePackDescriptionXMLParser10(properties));
+        mapper.registerRootElement(ROOT_1_1, new FeaturePackDescriptionXMLParser11(properties));
     }
 
     public FeaturePackDescription parse(final InputStream input) throws XMLStreamException {
