@@ -104,6 +104,9 @@ public class FeaturePackBuilder {
                 continue;
             }
             Artifact dependencyArtifact = buildArtifactResolver.getArtifact(dependency);
+            if (dependencyArtifact == null) {
+                throw new RuntimeException("Could not find artifact for " + dependency);
+            }
             // load the dependency feature pack
             FeaturePack dependencyFeaturePack = FeaturePackFactory.createPack(dependencyArtifact, artifactFileResolver, new FeaturePackArtifactResolver(Collections.<Artifact>emptyList()));
             // put its artifact to the version map
