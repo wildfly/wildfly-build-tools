@@ -104,7 +104,7 @@ public class ConfigurationAssembler {
             for (SubsystemConfig subsystem : subsystems.values()) {
                 final InputStreamSource inputStreamSource = subsystemInputStreamSources.getInputStreamSource(subsystem.getSubsystem());
                 if (inputStreamSource == null) {
-                    throw new IllegalStateException("Could not resolve '" + subsystem);
+                    throw new IllegalStateException("Could not resolve '" + subsystem + " Check the module for the extension has been defined.");
                 }
                 final SubsystemParser subsystemParser = new SubsystemParser(templateParser.getRootNode().getNamespace(), subsystem.getSupplement(), inputStreamSource);
                 subsystemParser.parse();
