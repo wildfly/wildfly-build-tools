@@ -24,7 +24,10 @@ import org.wildfly.build.util.xml.ProcessingInstructionNode;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
 import java.io.BufferedWriter;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -68,16 +71,33 @@ public class ConfigurationAssembler {
                 throw new IllegalStateException("Could not create " + outputFile.getParentFile());
             }
         }
-        FormattingXMLStreamWriter writer = new FormattingXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(new BufferedWriter(new FileWriter(outputFile))));
+        FileWriter fileWriter = new FileWriter(outputFile);
+        BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+        FormattingXMLStreamWriter writer = new FormattingXMLStreamWriter(XMLOutputFactory.newInstance().createXMLStreamWriter(bufferedWriter));
         try {
             writer.writeStartDocument();
             templateParser.getRootNode().marshall(writer);
             writer.writeEndDocument();
         } finally {
-            try {
-                writer.close();
-            } catch (Exception ignore) {
-            }
+            // XMLStreamWriter does not close inner streams!
+            safeClose(writer);
+            safeClose(bufferedWriter);
+            // BufferedWriter does, but just in case...
+            safeClose(fileWriter);
+        }
+    }
+
+    private void safeClose(Closeable c) {
+        try {
+            c.close();
+        } catch (Throwable e) {
+        }
+    }
+
+    private void safeClose(XMLStreamWriter c) {
+        try {
+            c.close();
+        } catch (Throwable e) {
         }
     }
 
