@@ -17,7 +17,7 @@
   -->
 
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
-           xmlns="urn:wildfly:server-provisioning:1.0"
+           xmlns="urn:wildfly:server-provisioning:1.1"
            targetNamespace="urn:wildfly:server-provisioning:1.1"
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
@@ -30,9 +30,15 @@
                 <xs:element name="copy-artifacts" type="copy-artifacts-type" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
             <xs:attribute name="copy-module-artifacts" type="xs:boolean" use="optional" />
-            <xs:attribute name="extract-schemas" type="xs:boolean" use="optional" />
+            <xs:attribute name="extract-schemas" type="xs:boolean" use="optional" default="false" />
+            <xs:attribute name="extract-schemas-groups" type="stringList" use="optional" default="org.jboss.as org.wildfly"/>
         </xs:complexType>
     </xs:element>
+
+    <xs:simpleType name="stringList">
+        <xs:list itemType="xs:string"/>
+    </xs:simpleType>
+
 
     <xs:complexType name="feature-packs-type">
         <xs:sequence>
@@ -149,5 +155,4 @@
         <xs:attribute name="pattern" type="xs:string" use="required" />
         <xs:attribute name="include" type="xs:boolean" use="required" />
     </xs:complexType>
-
 </xs:schema>

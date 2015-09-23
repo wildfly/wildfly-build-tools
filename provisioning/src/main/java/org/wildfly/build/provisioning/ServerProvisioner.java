@@ -77,7 +77,19 @@ public class ServerProvisioner {
 
     private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
 
-    public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+    private final ServerProvisioningDescription description;
+    private final File outputDirectory;
+    private final ArtifactFileResolver artifactFileResolver;
+    private final ArtifactResolver versionOverrideArtifactResolver;
+
+    public ServerProvisioner(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+        this.description = description;
+        this.outputDirectory = outputDirectory;
+        this.artifactFileResolver = artifactFileResolver;
+        this.versionOverrideArtifactResolver = versionOverrideArtifactResolver;
+    }
+
+    public void build() {
         final ServerProvisioning serverProvisioning = new ServerProvisioning(description);
         final List<String> errors = new ArrayList<>();
         try {
@@ -91,7 +103,7 @@ public class ServerProvisioner {
             outputDirectory.mkdirs();
             // create schema output dir if needed
             final File schemaOutputDirectory;
-            if (serverProvisioning.getDescription().isExtractSchemas()) {
+            if (description.isExtractSchemas()) {
                 schemaOutputDirectory = new File(outputDirectory, SUBSYSTEM_SCHEMA_TARGET_DIRECTORY);
                 if (!schemaOutputDirectory.exists()) {
                     schemaOutputDirectory.mkdirs();
@@ -115,19 +127,25 @@ public class ServerProvisioner {
         } catch (Throwable e) {
             throw new RuntimeException(e);
         } finally {
-            if(!errors.isEmpty()) {
+            if (!errors.isEmpty()) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Some errors were encountered creating the feature pack\n");
-                for(String error : errors) {
+                for (String error : errors) {
                     sb.append(error);
                     sb.append("\n");
                 }
                 throw new RuntimeException(sb.toString());
             }
         }
+
     }
 
-    private static void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+    public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+        ServerProvisioner provisioner = new ServerProvisioner(description, outputDirectory, artifactFileResolver, versionOverrideArtifactResolver);
+        provisioner.build();
+    }
+
+    private void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         for (CopyArtifact copyArtifact : copyArtifacts) {
 
             //first resolve the artifact
@@ -162,14 +180,23 @@ public class ServerProvisioner {
                 FileUtils.copyFile(artifactFile, target);
             }
 
-            if (schemaOutputDirectory != null) {
-                // extract schemas, if any
+            extractSchema(schemaOutputDirectory, artifact, artifactFile);
+        }
+    }
+
+    private void extractSchema(File schemaOutputDirectory, Artifact artifact, File artifactFile) throws IOException {
+        if (description.isExtractSchemas() && schemaOutputDirectory != null) {
+            String groupId = artifact.getGACE().getGroupId();
+            // extract schemas, if any
+            if (description.getExtractSchemasGroups().contains(groupId)){
+                logger.debugf("extracting schemas for artifact: '%s'", artifact);
                 FileUtils.extractSchemas(artifactFile, schemaOutputDirectory);
             }
         }
     }
 
-    private static void processModules(ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException, XMLStreamException {
+
+    private void processModules(ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException, XMLStreamException {
         // 1. gather the modules for each feature pack
         final Map<FeaturePack, List<FeaturePack.Module>> featurePackModulesMap = new HashMap<>();
         Set<ModuleIdentifier> moduleIdentifiers = new HashSet<>();
@@ -198,7 +225,7 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processFeaturePackModules(FeaturePack featurePack, List<FeaturePack.Module> includedModules, ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+    private void processFeaturePackModules(FeaturePack featurePack, List<FeaturePack.Module> includedModules, ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         final boolean thinServer = !serverProvisioning.getDescription().isCopyModuleArtifacts();
         // create the module's artifact property replacer
         final BuildPropertyReplacer buildPropertyReplacer = thinServer ? new BuildPropertyReplacer(new ModuleArtifactPropertyResolver(featurePack.getArtifactResolver())) : null;
@@ -236,9 +263,7 @@ public class ServerProvisioner {
                         // add all subsystem templates
                         serverProvisioning.getConfig().getInputStreamSources().addAllSubsystemFileSourcesFromZipFile(artifactFile);
                         // extract schemas if needed
-                        if (schemaOutputDirectory != null) {
-                            FileUtils.extractSchemas(artifactFile, schemaOutputDirectory);
-                        }
+                        extractSchema(schemaOutputDirectory, artifact, artifactFile);
                         if (jandex) {
                             String baseName = artifactFile.getName().substring(0, artifactFile.getName().lastIndexOf("."));
                             String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf("."));
@@ -275,7 +300,7 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processConfig(ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed) throws IOException, XMLStreamException {
+    private void processConfig(ServerProvisioning serverProvisioning, File outputDirectory, Set<String> filesProcessed) throws IOException, XMLStreamException {
         ServerProvisioning.Config provisioningConfig = serverProvisioning.getConfig();
         // 1. collect and merge each feature pack configs
         for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
@@ -326,7 +351,7 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processFeaturePackConfig(ServerProvisioningFeaturePack provisioningFeaturePack, ServerProvisioning.Config provisioningConfig) throws IOException, XMLStreamException {
+    private void processFeaturePackConfig(ServerProvisioningFeaturePack provisioningFeaturePack, ServerProvisioning.Config provisioningConfig) throws IOException, XMLStreamException {
         FeaturePack featurePack = provisioningFeaturePack.getFeaturePack();
         getLog().debug("Processing provisioning feature pack "+featurePack.getFeaturePackFile()+" configs");
         try (ZipFile zipFile = new ZipFile(featurePack.getFeaturePackFile())) {
@@ -342,7 +367,7 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processFeaturePackConfigFile(ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile, ZipFile zipFile, ServerProvisioningFeaturePack provisioningFeaturePack, Map<String, ServerProvisioning.ConfigFile> provisioningConfigFiles) throws IOException, XMLStreamException {
+    private void processFeaturePackConfigFile(ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile, ZipFile zipFile, ServerProvisioningFeaturePack provisioningFeaturePack, Map<String, ServerProvisioning.ConfigFile> provisioningConfigFiles) throws IOException, XMLStreamException {
         ConfigFile configFile = serverProvisioningFeaturePackConfigFile.getFeaturePackConfigFile();
         // get provisioning config file for the output file being processed
         ServerProvisioning.ConfigFile provisioningConfigFile = provisioningConfigFiles.get(configFile.getOutputFile());
@@ -387,20 +412,20 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+    private void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
         processCopyArtifacts(featurePack.getDescription().getCopyArtifacts(), featurePack.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         for (FeaturePack dependency : featurePack.getDependencies()) {
             processFeaturePackCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
         }
     }
 
-    private static void processProvisioningFeaturePackContents(ServerProvisioningFeaturePack provisioningFeaturePack, File outputDirectory, Set<String> filesProcessed) throws IOException {
+    private void processProvisioningFeaturePackContents(ServerProvisioningFeaturePack provisioningFeaturePack, File outputDirectory, Set<String> filesProcessed) throws IOException {
         if (provisioningFeaturePack.getDescription().includesContentFiles()) {
             processFeaturePackContents(provisioningFeaturePack.getFeaturePack(), provisioningFeaturePack.getDescription().getContentFilters(), outputDirectory, filesProcessed);
         }
     }
 
-    private static void processFeaturePackContents(FeaturePack featurePack, ServerProvisioningDescription.FeaturePack.ContentFilters contentFilters, File outputDirectory, Set<String> filesProcessed) throws IOException {
+    private void processFeaturePackContents(FeaturePack featurePack, ServerProvisioningDescription.FeaturePack.ContentFilters contentFilters, File outputDirectory, Set<String> filesProcessed) throws IOException {
         final int fileNameWithoutContentsStart = Locations.CONTENT.length() + 1;
         try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
             for (String contentFile : featurePack.getContentFiles()) {
@@ -432,7 +457,7 @@ public class ServerProvisioner {
         }
     }
 
-    private static void processFeaturePackFilePermissions(FeaturePack featurePack, File outputDirectory) throws IOException {
+    private void processFeaturePackFilePermissions(FeaturePack featurePack, File outputDirectory) throws IOException {
         final Path baseDir = Paths.get(outputDirectory.getAbsolutePath());
         final List<FilePermission> filePermissions = featurePack.getDescription().getFilePermissions();
         Files.walkFileTree(baseDir, new SimpleFileVisitor<Path>() {
@@ -468,7 +493,7 @@ public class ServerProvisioner {
         }
     }
 
-    private static void extractArtifact(File file, File target, CopyArtifact copy) throws IOException {
+    private void extractArtifact(File file, File target, CopyArtifact copy) throws IOException {
         try (ZipFile zip = new ZipFile(file)) {
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements()) {

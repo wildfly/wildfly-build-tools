@@ -19,11 +19,12 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 
 import java.util.Map;
 import java.util.Set;
-
 import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+
+import org.jboss.staxmapper.XMLExtendedStreamReader;
 
 /**
  *
@@ -151,5 +152,10 @@ public class ParsingUtils {
         regex = regex.replaceAll("\\*", ".*"); // replace * with .*
         regex = regex.replaceAll("\\?", "."); // replace ? with .
         return regex;
+    }
+
+    public static XMLStreamException unexpectedAttribute(final XMLExtendedStreamReader reader, final int index) {
+        return new XMLStreamException(String.format("Unexpected attribute '%s' encountered", reader.getAttributeName(index)), reader.getLocation());
+
     }
 }

@@ -71,13 +71,15 @@ public class ServerProvisioningDescriptionXmlWriter implements XMLElementWriter<
     @Override
     public void writeContent(XMLExtendedStreamWriter streamWriter, ServerProvisioningDescription description) throws XMLStreamException {
         // build node tree
-        final ElementNode rootElementNode = new ElementNode(null, Element.SERVER_PROVISIONING.getLocalName(), ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0);
+        final ElementNode rootElementNode = new ElementNode(null, Element.SERVER_PROVISIONING.getLocalName(), ServerProvisioningDescriptionModelParser11.NAMESPACE_1_1);
         if (description.isCopyModuleArtifacts()) {
             rootElementNode.addAttribute(Attribute.COPY_MODULE_ARTIFACTS.getLocalName(), new AttributeValue(Boolean.TRUE.toString()));
         }
         if (description.isExtractSchemas()) {
             rootElementNode.addAttribute(Attribute.EXTRACT_SCHEMAS.getLocalName(), new AttributeValue(Boolean.TRUE.toString()));
+            rootElementNode.addAttribute(Attribute.EXTRACT_SCHEMAS_GROUPS.getLocalName(), new AttributeValue(description.getExtractSchemasGroupsAsString()));
         }
+
         processFeaturePacks(description.getFeaturePacks(), rootElementNode);
         processVersionOverrides(description.getVersionOverrides(), rootElementNode);
         CopyArtifactsXMLWriter10.INSTANCE.write(description.getCopyArtifacts(), rootElementNode);

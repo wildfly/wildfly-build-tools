@@ -16,16 +16,16 @@
 
 package org.wildfly.build.provisioning.model;
 
-import org.wildfly.build.common.model.CopyArtifactsModelParser10;
-import org.wildfly.build.common.model.FileFilterModelParser10;
-
-import javax.xml.namespace.QName;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.wildfly.build.common.model.CopyArtifactsModelParser10;
+import org.wildfly.build.common.model.FileFilterModelParser10;
+
 /**
-* @author Stuart Douglas
-*/
+ * @author Stuart Douglas
+ * @author Tomaz Cerar
+ */
 enum Element {
 
     // default unknown element
@@ -46,39 +46,32 @@ enum Element {
     VERSION_OVERRIDES("version-overrides"),
     VERSION_OVERRIDE("version-override"),
     COPY_ARTIFACTS(CopyArtifactsModelParser10.ELEMENT_LOCAL_NAME),
-    FILTER(FileFilterModelParser10.ELEMENT_LOCAL_NAME),
-    ;
+    FILTER(FileFilterModelParser10.ELEMENT_LOCAL_NAME);
 
-    private static final Map<QName, Element> elements;
+    private static final Map<String, Element> elements;
 
     static {
-        Map<QName, Element> elementsMap = new HashMap<QName, Element>();
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, SERVER_PROVISIONING.getLocalName()), SERVER_PROVISIONING);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, FEATURE_PACKS.getLocalName()), FEATURE_PACKS);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, FEATURE_PACK.getLocalName()), FEATURE_PACK);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, ARTIFACT.getLocalName()), ARTIFACT);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, MODULES.getLocalName()), MODULES);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, FILTER.getLocalName()), FILTER);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, CONFIG.getLocalName()), CONFIG);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, STANDALONE.getLocalName()), STANDALONE);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, DOMAIN.getLocalName()), DOMAIN);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, PROPERTY.getLocalName()), PROPERTY);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, SUBSYSTEMS.getLocalName()), SUBSYSTEMS);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, SUBSYSTEM.getLocalName()), SUBSYSTEM);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, CONTENTS.getLocalName()), CONTENTS);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, VERSION_OVERRIDES.getLocalName()), VERSION_OVERRIDES);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, VERSION_OVERRIDE.getLocalName()), VERSION_OVERRIDE);
-        elementsMap.put(new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, COPY_ARTIFACTS.getLocalName()), COPY_ARTIFACTS);
+        Map<String, Element> elementsMap = new HashMap<>();
+        elementsMap.put(SERVER_PROVISIONING.getLocalName(), SERVER_PROVISIONING);
+        elementsMap.put(FEATURE_PACKS.getLocalName(), FEATURE_PACKS);
+        elementsMap.put(FEATURE_PACK.getLocalName(), FEATURE_PACK);
+        elementsMap.put(ARTIFACT.getLocalName(), ARTIFACT);
+        elementsMap.put(MODULES.getLocalName(), MODULES);
+        elementsMap.put(FILTER.getLocalName(), FILTER);
+        elementsMap.put(CONFIG.getLocalName(), CONFIG);
+        elementsMap.put(STANDALONE.getLocalName(), STANDALONE);
+        elementsMap.put(DOMAIN.getLocalName(), DOMAIN);
+        elementsMap.put(PROPERTY.getLocalName(), PROPERTY);
+        elementsMap.put(SUBSYSTEMS.getLocalName(), SUBSYSTEMS);
+        elementsMap.put(SUBSYSTEM.getLocalName(), SUBSYSTEM);
+        elementsMap.put(CONTENTS.getLocalName(), CONTENTS);
+        elementsMap.put(VERSION_OVERRIDES.getLocalName(), VERSION_OVERRIDES);
+        elementsMap.put(VERSION_OVERRIDE.getLocalName(), VERSION_OVERRIDE);
+        elementsMap.put(COPY_ARTIFACTS.getLocalName(), COPY_ARTIFACTS);
         elements = elementsMap;
     }
 
-    static Element of(QName qName) {
-        QName name;
-        if (qName.getNamespaceURI().equals("")) {
-            name = new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, qName.getLocalPart());
-        } else {
-            name = qName;
-        }
+    static Element of(String name) {
         final Element element = elements.get(name);
         return element == null ? UNKNOWN : element;
     }
