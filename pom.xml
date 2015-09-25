@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>16</version>
+        <version>19</version>
     </parent>
 
     <groupId>org.wildfly.build</groupId>
@@ -79,7 +79,7 @@
 
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
-        <version.org.wildfly.checkstyle-config>1.0.0.Final</version.org.wildfly.checkstyle-config>
+        <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
         <version.org.jboss.staxmapper>1.1.0.Final</version.org.jboss.staxmapper>
     </properties>
 
@@ -125,7 +125,7 @@
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>${version.checkstyle.plugin}</version>
                     <configuration>
-                        <configLocation>jboss-as-checkstyle/checkstyle.xml</configLocation>
+                        <configLocation>wildfly-checkstyle/checkstyle.xml</configLocation>
                         <consoleOutput>true</consoleOutput>
                         <failsOnError>true</failsOnError>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>

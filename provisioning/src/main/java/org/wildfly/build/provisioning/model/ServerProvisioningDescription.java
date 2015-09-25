@@ -22,6 +22,7 @@ import org.wildfly.build.common.model.FileFilter;
 import org.wildfly.build.pack.model.Artifact;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,10 +37,13 @@ public class ServerProvisioningDescription {
     private final List<FeaturePack> featurePacks = new ArrayList<>();
     private final Set<Artifact> versionOverrides = new HashSet<>();
     private final List<CopyArtifact> copyArtifacts = new ArrayList<>();
-
     private boolean copyModuleArtifacts;
-
     private boolean extractSchemas;
+    private Set<String> extractSchemasGroups;
+
+    public ServerProvisioningDescription() {
+        setExtractSchemasGroups("org.jboss.as org.wildfly");
+    }
 
     public List<FeaturePack> getFeaturePacks() {
         return featurePacks;
@@ -59,6 +63,24 @@ public class ServerProvisioningDescription {
 
     public void setExtractSchemas(boolean extractSchemas) {
         this.extractSchemas = extractSchemas;
+    }
+
+    public Set<String> getExtractSchemasGroups() {
+        return extractSchemasGroups;
+    }
+
+    public String getExtractSchemasGroupsAsString() {
+        StringBuilder buffer = new StringBuilder();
+        for (String group: extractSchemasGroups){
+            buffer.append(group).append(" ");
+        }
+        return buffer.toString().trim();
+    }
+
+    public void setExtractSchemasGroups(String groups) {
+        this.extractSchemasGroups = new HashSet<>(Arrays.asList(groups.split(" ")));
+        System.out.println("groups = " + groups);
+        System.out.println("groups = " + extractSchemasGroups);
     }
 
     public Set<Artifact> getVersionOverrides() {

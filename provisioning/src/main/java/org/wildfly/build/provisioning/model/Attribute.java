@@ -30,6 +30,7 @@ enum Attribute {
 
     COPY_MODULE_ARTIFACTS("copy-module-artifacts"),
     EXTRACT_SCHEMAS("extract-schemas"),
+    EXTRACT_SCHEMAS_GROUPS("extract-schemas-groups"),
     PATTERN("pattern"),
     INCLUDE("include"),
     TRANSITIVE("transitive"),
@@ -57,6 +58,7 @@ enum Attribute {
         attributesMap.put(new QName(VALUE.getLocalName()), VALUE);
         attributesMap.put(new QName(COPY_MODULE_ARTIFACTS.getLocalName()), COPY_MODULE_ARTIFACTS);
         attributesMap.put(new QName(EXTRACT_SCHEMAS.getLocalName()), EXTRACT_SCHEMAS);
+        attributesMap.put(new QName(EXTRACT_SCHEMAS_GROUPS.getLocalName()), EXTRACT_SCHEMAS_GROUPS);
         attributesMap.put(new QName(GROUP_ID.getLocalName()), GROUP_ID);
         attributesMap.put(new QName(ARTIFACT_ID.getLocalName()), ARTIFACT_ID);
         attributesMap.put(new QName(CLASSIFIER.getLocalName()), CLASSIFIER);

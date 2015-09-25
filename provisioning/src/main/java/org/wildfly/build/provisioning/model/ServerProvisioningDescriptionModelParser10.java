@@ -50,8 +50,8 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
 
     public static final String NAMESPACE_1_0 = "urn:wildfly:server-provisioning:1.0";
 
-    private final BuildPropertyReplacer propertyReplacer;
-    private final CopyArtifactsModelParser10 copyArtifactsModelParser;
+    final BuildPropertyReplacer propertyReplacer;
+    final CopyArtifactsModelParser10 copyArtifactsModelParser;
     private final FileFilterModelParser10 fileFilterModelParser;
 
     ServerProvisioningDescriptionModelParser10(PropertyResolver resolver) {
@@ -87,7 +87,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
 
                     switch (element) {
                         case FEATURE_PACKS:
@@ -112,14 +112,14 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
         throw ParsingUtils.endOfDocument(reader.getLocation());
     }
 
-    private void parseFeaturePacks(final XMLStreamReader reader, final ServerProvisioningDescription result) throws XMLStreamException {
+    protected void parseFeaturePacks(final XMLStreamReader reader, final ServerProvisioningDescription result) throws XMLStreamException {
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case FEATURE_PACK:
                             parseFeaturePack(reader, result);
@@ -151,7 +151,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case MODULES:
                             moduleFilters = parseModules(reader);
@@ -206,7 +206,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                     return result;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case FILTER:
                             fileFilterModelParser.parseFilter(reader, result.getFilters());
@@ -244,7 +244,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                     return result;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case FILTER:
                             parseModuleFilter(reader, result.getFilters());
@@ -301,7 +301,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case STANDALONE:
                             parseConfigFile(reader, result.getStandaloneConfigFiles());
@@ -354,7 +354,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case PROPERTY:
                             parseProperty(reader, properties);
@@ -411,7 +411,7 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case SUBSYSTEM:
                             result.add(parseSubsystem(reader));
@@ -456,14 +456,14 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
         return new ServerProvisioningDescription.FeaturePack.Subsystem(name, transitive);
     }
 
-    private void parseVersionOverrides(final XMLStreamReader reader, final ServerProvisioningDescription result) throws XMLStreamException {
+    protected void parseVersionOverrides(final XMLStreamReader reader, final ServerProvisioningDescription result) throws XMLStreamException {
         while (reader.hasNext()) {
             switch (reader.nextTag()) {
                 case XMLStreamConstants.END_ELEMENT: {
                     return;
                 }
                 case XMLStreamConstants.START_ELEMENT: {
-                    final Element element = Element.of(reader.getName());
+                    final Element element = Element.of(reader.getLocalName());
                     switch (element) {
                         case VERSION_OVERRIDE:
                             result.getVersionOverrides().add(parseArtifact(reader, null, true));
