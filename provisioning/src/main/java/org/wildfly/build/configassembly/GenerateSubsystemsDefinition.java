@@ -121,13 +121,10 @@ public class GenerateSubsystemsDefinition {
             }
         }
 
-        Writer writer = new FileWriter(outputFile);
-        try {
+        try (Writer writer = new FileWriter(outputFile)) {
             XMLOutputFactory factory = XMLOutputFactory.newInstance();
             XMLStreamWriter xmlwriter = new FormattingXMLStreamWriter(factory.createXMLStreamWriter(writer));
             config.marshall(xmlwriter);
-        } finally {
-            writer.close();
         }
     }
 }
