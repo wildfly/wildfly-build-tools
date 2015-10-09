@@ -22,18 +22,18 @@
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
-    <xs:element name="feature-pack">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element name="dependencies" type="dependencies-type" minOccurs="0" maxOccurs="1" />
-                <xs:element name="artifact-versions" type="artifact-versions-type" minOccurs="0" maxOccurs="1" />
-                <xs:element name="config" type="config-type" minOccurs="0" maxOccurs="1" />
-                <xs:element name="copy-artifacts" type="copy-artifacts-type" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="file-permissions" type="file-permissions-type" minOccurs="0" maxOccurs="1"/>
-            </xs:sequence>
-        </xs:complexType>
+    <xs:element name="feature-pack" type="feature-pack-type">
     </xs:element>
 
+    <xs:complexType name="feature-pack-type">
+        <xs:sequence>
+            <xs:element name="dependencies" type="dependencies-type" minOccurs="0" maxOccurs="1" />
+            <xs:element name="artifact-versions" type="artifact-versions-type" minOccurs="0" maxOccurs="1" />
+            <xs:element name="config" type="config-type" minOccurs="0" maxOccurs="1" />
+            <xs:element name="copy-artifacts" type="copy-artifacts-type" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="file-permissions" type="file-permissions-type" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
     <xs:complexType name="dependencies-type">
         <xs:sequence>
             <xs:element name="artifact" type="named-type" maxOccurs="unbounded" minOccurs="0" />
@@ -85,9 +85,9 @@
         <xs:sequence>
             <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
-        <xs:attribute name="artifact" />
-        <xs:attribute name="to-location" />
-        <xs:attribute name="extract" use="optional" default="false" />
+        <xs:attribute name="artifact" type="xs:string"/>
+        <xs:attribute name="to-location" type="xs:string"/>
+        <xs:attribute name="extract" use="optional" default="false" type="xs:boolean"/>
     </xs:complexType>
     <xs:complexType name="filter-type">
         <xs:attribute name="pattern" type="xs:string" use="required" />
@@ -103,7 +103,7 @@
         <xs:sequence>
             <xs:element name="filter" type="filter-type" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
-        <xs:attribute name="value" use="required"/>
+        <xs:attribute name="value" use="required" type="xs:string"/>
     </xs:complexType>
 
 </xs:schema>
