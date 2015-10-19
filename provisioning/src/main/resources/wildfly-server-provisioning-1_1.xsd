@@ -32,6 +32,7 @@
             <xs:attribute name="copy-module-artifacts" type="xs:boolean" use="optional" />
             <xs:attribute name="extract-schemas" type="xs:boolean" use="optional" default="false" />
             <xs:attribute name="extract-schemas-groups" type="stringList" use="optional" default="org.jboss.as org.wildfly"/>
+            <xs:attribute name="exclude-dependencies" type="xs:boolean" use="optional" default="false" />
         </xs:complexType>
     </xs:element>
 

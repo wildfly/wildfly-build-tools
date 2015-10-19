@@ -120,9 +120,9 @@ public class ServerProvisioner {
             processConfig(serverProvisioning, outputDirectory, filesProcessed);
             // process everything else for each feature pack
             for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
-                processFeaturePackCopyArtifacts(provisioningFeaturePack.getFeaturePack(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-                processProvisioningFeaturePackContents(provisioningFeaturePack, outputDirectory, filesProcessed);
-                processFeaturePackFilePermissions(provisioningFeaturePack.getFeaturePack(), outputDirectory);
+                processFeaturePackCopyArtifacts(provisioningFeaturePack.getFeaturePack(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory, description.isExcludeDependencies());
+                processProvisioningFeaturePackContents(provisioningFeaturePack, outputDirectory, filesProcessed, description.isExcludeDependencies());
+                processFeaturePackFilePermissions(provisioningFeaturePack.getFeaturePack(), outputDirectory, description.isExcludeDependencies());
             }
         } catch (Throwable e) {
             throw new RuntimeException(e);
@@ -202,7 +202,7 @@ public class ServerProvisioner {
         Set<ModuleIdentifier> moduleIdentifiers = new HashSet<>();
         for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
             getLog().debugf("Gathering modules for provisioning feature pack %s", provisioningFeaturePack.getFeaturePack().getFeaturePackFile());
-            for (FeaturePack.Module module : provisioningFeaturePack.getModules(artifactFileResolver).values()) {
+            for (FeaturePack.Module module : provisioningFeaturePack.getModules(artifactFileResolver, serverProvisioning.getDescription().isExcludeDependencies()).values()) {
                 final ModuleIdentifier moduleIdentifier = module.getIdentifier();
                 if (moduleIdentifiers.add(moduleIdentifier)) {
                     getLog().debugf("Adding module %s from feature pack %s", moduleIdentifier, module.getFeaturePack().getFeaturePackFile());
@@ -214,6 +214,20 @@ public class ServerProvisioner {
                     featurePackModules.add(module);
                 } else {
                     getLog().debugf("Skipping %s from feature pack %s. A module with such identifier is already in the provisioning module set.", moduleIdentifier, module.getFeaturePack().getFeaturePackFile());
+                }
+            }
+            //we always need to resolve all subsystem templates, regardless of the value of exclude-dependencies
+            for (FeaturePack.Module module : provisioningFeaturePack.getModules(artifactFileResolver, false).values()) {
+                for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
+                    String artifactCoords = artifactName.getArtifactCoords();
+                    String options = artifactName.getOptions();
+                    Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactCoords);
+                    if (artifact == null) {
+                        throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
+                    }
+                    File artifactFile = artifactFileResolver.getArtifactFile(artifact);
+                    // add all subsystem templates
+                    serverProvisioning.getConfig().getInputStreamSources().addAllSubsystemFileSourcesFromZipFile(artifactFile);
                 }
             }
         }
@@ -260,8 +274,6 @@ public class ServerProvisioner {
                     try {
                         // process the module artifact
                         File artifactFile = artifactFileResolver.getArtifactFile(artifact);
-                        // add all subsystem templates
-                        serverProvisioning.getConfig().getInputStreamSources().addAllSubsystemFileSourcesFromZipFile(artifactFile);
                         // extract schemas if needed
                         extractSchema(schemaOutputDirectory, artifact, artifactFile);
                         if (jandex) {
@@ -412,20 +424,22 @@ public class ServerProvisioner {
         }
     }
 
-    private void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+    private void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory, boolean excludeDependencies) throws IOException {
         processCopyArtifacts(featurePack.getDescription().getCopyArtifacts(), featurePack.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-        for (FeaturePack dependency : featurePack.getDependencies()) {
-            processFeaturePackCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
+        if(!excludeDependencies) {
+            for (FeaturePack dependency : featurePack.getDependencies()) {
+                processFeaturePackCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory, excludeDependencies);
+            }
         }
     }
 
-    private void processProvisioningFeaturePackContents(ServerProvisioningFeaturePack provisioningFeaturePack, File outputDirectory, Set<String> filesProcessed) throws IOException {
+    private void processProvisioningFeaturePackContents(ServerProvisioningFeaturePack provisioningFeaturePack, File outputDirectory, Set<String> filesProcessed, boolean excludeDependencies) throws IOException {
         if (provisioningFeaturePack.getDescription().includesContentFiles()) {
-            processFeaturePackContents(provisioningFeaturePack.getFeaturePack(), provisioningFeaturePack.getDescription().getContentFilters(), outputDirectory, filesProcessed);
+            processFeaturePackContents(provisioningFeaturePack.getFeaturePack(), provisioningFeaturePack.getDescription().getContentFilters(), outputDirectory, filesProcessed, excludeDependencies);
         }
     }
 
-    private void processFeaturePackContents(FeaturePack featurePack, ServerProvisioningDescription.FeaturePack.ContentFilters contentFilters, File outputDirectory, Set<String> filesProcessed) throws IOException {
+    private void processFeaturePackContents(FeaturePack featurePack, ServerProvisioningDescription.FeaturePack.ContentFilters contentFilters, File outputDirectory, Set<String> filesProcessed, boolean excludeDependencies) throws IOException {
         final int fileNameWithoutContentsStart = Locations.CONTENT.length() + 1;
         try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
             for (String contentFile : featurePack.getContentFiles()) {
@@ -452,12 +466,14 @@ public class ServerProvisioner {
                 FileUtils.extractFile(jar, contentFile, new java.io.File(outputDirectory, outputFile));
             }
         }
-        for (FeaturePack dependency : featurePack.getDependencies()) {
-            processFeaturePackContents(dependency, contentFilters, outputDirectory, filesProcessed);
+        if(!excludeDependencies) {
+            for (FeaturePack dependency : featurePack.getDependencies()) {
+                processFeaturePackContents(dependency, contentFilters, outputDirectory, filesProcessed, excludeDependencies);
+            }
         }
     }
 
-    private void processFeaturePackFilePermissions(FeaturePack featurePack, File outputDirectory) throws IOException {
+    private void processFeaturePackFilePermissions(FeaturePack featurePack, File outputDirectory, boolean excludeDependencies) throws IOException {
         final Path baseDir = Paths.get(outputDirectory.getAbsolutePath());
         final List<FilePermission> filePermissions = featurePack.getDescription().getFilePermissions();
         Files.walkFileTree(baseDir, new SimpleFileVisitor<Path>() {
@@ -488,8 +504,10 @@ public class ServerProvisioner {
                 return FileVisitResult.CONTINUE;
             }
         });
-        for (FeaturePack dependency : featurePack.getDependencies()) {
-            processFeaturePackFilePermissions(dependency, outputDirectory);
+        if(!excludeDependencies) {
+            for (FeaturePack dependency : featurePack.getDependencies()) {
+                processFeaturePackFilePermissions(dependency, outputDirectory, excludeDependencies);
+            }
         }
     }
 

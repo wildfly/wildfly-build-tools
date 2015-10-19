@@ -31,6 +31,7 @@ enum Attribute {
     COPY_MODULE_ARTIFACTS("copy-module-artifacts"),
     EXTRACT_SCHEMAS("extract-schemas"),
     EXTRACT_SCHEMAS_GROUPS("extract-schemas-groups"),
+    EXCLUDE_DEPENDENCIES("exclude-dependencies"),
     PATTERN("pattern"),
     INCLUDE("include"),
     TRANSITIVE("transitive"),
@@ -64,6 +65,7 @@ enum Attribute {
         attributesMap.put(new QName(CLASSIFIER.getLocalName()), CLASSIFIER);
         attributesMap.put(new QName(EXTENSION.getLocalName()), EXTENSION);
         attributesMap.put(new QName(VERSION.getLocalName()), VERSION);
+        attributesMap.put(new QName(EXCLUDE_DEPENDENCIES.getLocalName()), EXCLUDE_DEPENDENCIES);
 
 
         attributes = attributesMap;

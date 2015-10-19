@@ -39,7 +39,10 @@ public class ServerProvisioningDescription {
     private final List<CopyArtifact> copyArtifacts = new ArrayList<>();
     private boolean copyModuleArtifacts;
     private boolean extractSchemas;
+    private boolean excludeDependencies;
     private Set<String> extractSchemasGroups;
+    private Set<FeaturePack> enabledFeaturePacks = new HashSet<>();
+
 
     public ServerProvisioningDescription() {
         setExtractSchemasGroups("org.jboss.as org.wildfly");
@@ -63,6 +66,14 @@ public class ServerProvisioningDescription {
 
     public void setExtractSchemas(boolean extractSchemas) {
         this.extractSchemas = extractSchemas;
+    }
+
+    public boolean isExcludeDependencies() {
+        return excludeDependencies;
+    }
+
+    public void setExcludeDependencies(boolean excludeDependencies) {
+        this.excludeDependencies = excludeDependencies;
     }
 
     public Set<String> getExtractSchemasGroups() {
@@ -89,6 +100,14 @@ public class ServerProvisioningDescription {
 
     public List<CopyArtifact> getCopyArtifacts() {
         return copyArtifacts;
+    }
+
+    public Set<FeaturePack> getEnabledFeaturePacks() {
+        return enabledFeaturePacks;
+    }
+
+    public void setEnabledFeaturePacks(Set<FeaturePack> enabledFeaturePacks) {
+        this.enabledFeaturePacks = enabledFeaturePacks;
     }
 
     /**

@@ -54,6 +54,9 @@ class ServerProvisioningDescriptionModelParser11 extends ServerProvisioningDescr
                 case EXTRACT_SCHEMAS_GROUPS:
                     result.setExtractSchemasGroups(reader.getAttributeValue(i));
                     break;
+                case EXCLUDE_DEPENDENCIES:
+                    result.setExcludeDependencies(Boolean.parseBoolean(reader.getAttributeValue(i)));
+                    break;
                 default:
                     System.out.println("attribute = " + attribute);
                     throw ParsingUtils.unexpectedAttribute(reader, i);

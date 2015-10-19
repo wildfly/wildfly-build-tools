@@ -98,7 +98,7 @@ public class ServerProvisioningFeaturePack {
      *
      * @return
      */
-    public Map<ModuleIdentifier, FeaturePack.Module> getModules(ArtifactFileResolver artifactFileResolver) throws IOException, XMLStreamException {
+    public Map<ModuleIdentifier, FeaturePack.Module> getModules(ArtifactFileResolver artifactFileResolver, boolean excludeDependencies) throws IOException, XMLStreamException {
         ServerProvisioningDescription.FeaturePack.ModuleFilters moduleFilters = description.getModuleFilters();
         final Map<ModuleIdentifier, FeaturePack.Module> includedModules = new HashMap<>();
         if (moduleFilters == null) {
@@ -130,7 +130,11 @@ public class ServerProvisioningFeaturePack {
             }
             if (subsystems == null) {
                 // and no subsystems filtered, include all modules
-                includedModules.putAll(featurePack.getFeaturePackAndDependenciesModules());
+                if(excludeDependencies) {
+                    includedModules.putAll(featurePack.getFeaturePackModules());
+                } else {
+                    includedModules.putAll(featurePack.getFeaturePackAndDependenciesModules());
+                }
             } else {
                 // subsystems filtered, include subsystems module's and all transitive dependencies
                 for (String subsystem : subsystems) {
