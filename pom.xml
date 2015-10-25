@@ -27,7 +27,7 @@
 
     <groupId>org.wildfly.build</groupId>
     <artifactId>wildfly-build-tools-parent</artifactId>
-    <version>1.1.0.Final</version>
+    <version>1.1.1.Final-SNAPSHOT</version>
 
     <name>Wildfly Build Tools</name>
     <description>Tools used for building and provisioning the Wildfly server</description>
@@ -80,7 +80,7 @@
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
         <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
-        <version.org.jboss.staxmapper>1.1.0.Final</version.org.jboss.staxmapper>
+        <version.org.jboss.staxmapper>1.1.1.Final-SNAPSHOT</version.org.jboss.staxmapper>
     </properties>
 
     <modules>
