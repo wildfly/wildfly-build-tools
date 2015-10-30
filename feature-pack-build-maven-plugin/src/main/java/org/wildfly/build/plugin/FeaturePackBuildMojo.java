@@ -65,7 +65,7 @@ public class FeaturePackBuildMojo extends AbstractMojo {
     /**
      * The configuration file used for feature pack.
      */
-    @Parameter(alias = "config-file", property = "wildfly.feature.pack.configFile")
+    @Parameter(alias = "config-file", defaultValue = "feature-pack-build.xml", property = "wildfly.feature.pack.configFile")
     private String configFile;
 
     /**
