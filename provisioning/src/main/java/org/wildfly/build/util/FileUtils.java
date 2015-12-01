@@ -38,8 +38,12 @@ public class FileUtils {
         byte[] data = new byte[1024];
         ZipEntry entry = jarFile.getEntry(jarEntryName);
         if (entry.isDirectory()) { // if its a directory, create it
-            targetFile.mkdir();
+            targetFile.mkdirs();
             return;
+        }
+        File parent = targetFile.getParentFile();
+        if (!parent.exists()) {
+            parent.mkdirs();
         }
         try (FileOutputStream fos = new java.io.FileOutputStream(targetFile); InputStream is = jarFile.getInputStream(entry)) {
             int read;
