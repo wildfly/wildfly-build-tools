@@ -26,4 +26,5 @@ public class Locations {
     public static final String MODULES = "modules";
     public static final String CONTENT = "content";
     public static final String CONFIGURATION = "configuration";
+    public static final String SUBSYSTEM_TEMPLATES = "subsystem-templates";
 }

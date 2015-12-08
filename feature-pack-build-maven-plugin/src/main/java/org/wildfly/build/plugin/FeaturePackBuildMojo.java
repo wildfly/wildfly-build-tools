@@ -134,6 +134,7 @@ public class FeaturePackBuildMojo extends AbstractMojo {
             doCopy(path.resolve(Locations.CONTENT), baseFile.resolve(Locations.CONTENT));
             doCopy(path.resolve(Locations.MODULES), baseFile.resolve(Locations.MODULES));
             doCopy(path.resolve(Locations.CONFIGURATION), baseFile.resolve(Locations.CONFIGURATION));
+            doCopy(path.resolve(Locations.SUBSYSTEM_TEMPLATES), baseFile.resolve(Locations.SUBSYSTEM_TEMPLATES));
 
         } catch (IOException e) {
             throw new RuntimeException(e);

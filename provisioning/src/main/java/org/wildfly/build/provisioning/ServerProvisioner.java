@@ -116,14 +116,16 @@ public class ServerProvisioner {
             processCopyArtifacts(serverProvisioning.getDescription().getCopyArtifacts(), versionOverrideArtifactResolver, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
             // process modules (needs to be done for all feature packs before any config is processed, due to subsystem template gathering)
             processModules(serverProvisioning, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-            // process the server config
-            processConfig(serverProvisioning, outputDirectory, filesProcessed);
+
             // process everything else for each feature pack
             for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
+                processSubsystemConfigInFeaturePack(provisioningFeaturePack, serverProvisioning, artifactFileResolver);
                 processFeaturePackCopyArtifacts(provisioningFeaturePack.getFeaturePack(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory, description.isExcludeDependencies());
                 processProvisioningFeaturePackContents(provisioningFeaturePack, outputDirectory, filesProcessed, description.isExcludeDependencies());
                 processFeaturePackFilePermissions(provisioningFeaturePack.getFeaturePack(), outputDirectory, description.isExcludeDependencies());
             }
+            // process the server config
+            processConfig(serverProvisioning, outputDirectory, filesProcessed);
         } catch (Throwable e) {
             throw new RuntimeException(e);
         } finally {
@@ -138,6 +140,13 @@ public class ServerProvisioner {
             }
         }
 
+    }
+
+    private void processSubsystemConfigInFeaturePack(ServerProvisioningFeaturePack provisioningFeaturePack, ServerProvisioning serverProvisioning, ArtifactFileResolver artifactFileResolver) throws IOException {
+
+        File artifactFile = artifactFileResolver.getArtifactFile(provisioningFeaturePack.getFeaturePack().getArtifact());
+        // features packs themselves can contain a 'subsystem-templates' directory. Templates in the feature pack override ones from modules
+        serverProvisioning.getConfig().getInputStreamSources().addAllSubsystemFileSourcesFromZipFile(artifactFile);
     }
 
     public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
