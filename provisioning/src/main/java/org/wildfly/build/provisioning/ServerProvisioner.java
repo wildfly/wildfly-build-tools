@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -291,6 +292,17 @@ public class ServerProvisioner {
                             File target = new File(targetFile.getParent(), baseName + "-jandex" + extension);
                             JandexIndexer.createIndex(artifactFile, new FileOutputStream(target));
                             moduleXmlContents = moduleXmlContents.replaceAll("(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "$1<artifact name=\"\\${" + artifactCoords + "}\" />$1<resource-root path=\"" + target.getName() + "\"/>");
+                            // it's also possible that this is an element with nested content
+                            // this regex involves a good deal of backtracking but it seems to work
+                            moduleXmlContents =
+                                Pattern.compile(
+                                    "(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
+                                    Pattern.DOTALL
+                                )
+                                .matcher(moduleXmlContents)
+                                .replaceAll(
+                                    "$1<artifact name=\"\\${" + artifactCoords + "}\">$2</artifact>$1<resource-root path=\"" + target.getName() + "\">$2</resource-root>"
+                                );
                         }
                         if (!thinServer) {
                             // copy the artifact
@@ -298,6 +310,17 @@ public class ServerProvisioner {
                             FileUtils.copyFile(artifactFile, new File(targetFile.getParent(), artifactFileName));
                             // update module xml content
                             moduleXmlContents = moduleXmlContents.replaceAll("<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "<resource-root path=\"" + artifactFileName + "\"/>");
+                            // it's also possible that this is an element with nested content
+                            // this regex involves a good deal of backtracking but it seems to work
+                            moduleXmlContents =
+                                Pattern.compile(
+                                    "<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
+                                    Pattern.DOTALL
+                                )
+                                .matcher(moduleXmlContents)
+                                .replaceAll(
+                                    "<resource-root path=\"" + artifactFileName + "\">$1</resource-root>"
+                                );
                         }
                     } catch (Throwable t) {
                         throw new RuntimeException("Could not extract resources from " + artifactName, t);
