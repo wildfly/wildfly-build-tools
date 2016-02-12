@@ -58,7 +58,7 @@ public class ServerProvisioningMojo extends AbstractMojo {
     /**
      * The configuration file used for provisioning.
      */
-    @Parameter(alias = "config-file", property = "wildfly.provision.configFile")
+    @Parameter(alias = "config-file", defaultValue = "server-provisioning.xml", property = "wildfly.provision.configFile")
     private String configFile;
 
     /**
