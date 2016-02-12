@@ -45,7 +45,7 @@ public class ServerProvisioningDescription {
 
 
     public ServerProvisioningDescription() {
-        setExtractSchemasGroups("org.jboss.as org.wildfly");
+        setExtractSchemasGroups("org.jboss.as org.wildfly org.wildfly.core");
     }
 
     public List<FeaturePack> getFeaturePacks() {
@@ -90,8 +90,6 @@ public class ServerProvisioningDescription {
 
     public void setExtractSchemasGroups(String groups) {
         this.extractSchemasGroups = new HashSet<>(Arrays.asList(groups.split(" ")));
-        System.out.println("groups = " + groups);
-        System.out.println("groups = " + extractSchemasGroups);
     }
 
     public Set<Artifact> getVersionOverrides() {

@@ -58,7 +58,6 @@ class ServerProvisioningDescriptionModelParser11 extends ServerProvisioningDescr
                     result.setExcludeDependencies(Boolean.parseBoolean(reader.getAttributeValue(i)));
                     break;
                 default:
-                    System.out.println("attribute = " + attribute);
                     throw ParsingUtils.unexpectedAttribute(reader, i);
             }
         }
@@ -73,7 +72,6 @@ class ServerProvisioningDescriptionModelParser11 extends ServerProvisioningDescr
 
                     switch (element) {
                         case FEATURE_PACKS:
-                            System.out.println("parsing feature pack");
                             parseFeaturePacks(reader, result);
                             break;
                         case VERSION_OVERRIDES:

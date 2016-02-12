@@ -105,7 +105,7 @@ public class CreateCommand {
     }
 
     private static void printUsageAndExit(int exitCode) {
-        System.out.print("you did it wrong, TODO: usage");
+        System.out.print("TODO: usage");
         System.exit(exitCode);
     }
 
