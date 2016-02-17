@@ -75,6 +75,13 @@ public class FeaturePackBuildMojo extends AbstractMojo {
     private File configDir;
 
     /**
+     * A path relative to {@link #configDir} that represents the directory under which of resources such as
+     * {@code configuration/standalone/subsystems.xml}, {modules}, {subsystem-templates}, etc.
+     */
+    @Parameter(alias = "resources-dir", defaultValue = "src/main/resources", property = "wildfly.feature.pack.resourcesDir", required = true)
+    private String resourcesDir;
+
+    /**
      * The name of the server.
      */
     @Parameter(alias = "server-name", defaultValue = "${project.build.finalName}", property = "wildfly.feature.pack.serverName")
@@ -106,6 +113,18 @@ public class FeaturePackBuildMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        /* normalize resourcesDir */
+        if (!resourcesDir.isEmpty()) {
+            switch (resourcesDir.charAt(0)) {
+            case '/':
+            case '\\':
+                break;
+            default:
+                resourcesDir = "/" + resourcesDir;
+                break;
+            }
+        }
+
         copyContents();
         try (FileInputStream configStream = new FileInputStream(new File(configDir, configFile))) {
             Properties properties = new Properties();
@@ -130,7 +149,7 @@ public class FeaturePackBuildMojo extends AbstractMojo {
 
             final Path path = Paths.get(baseDir.getAbsolutePath());
 
-            final Path baseFile = Paths.get(configDir.getAbsolutePath() + "/src/main/resources");
+            final Path baseFile = Paths.get(configDir.getAbsolutePath() + resourcesDir);
             doCopy(path.resolve(Locations.CONTENT), baseFile.resolve(Locations.CONTENT));
             doCopy(path.resolve(Locations.MODULES), baseFile.resolve(Locations.MODULES));
             doCopy(path.resolve(Locations.CONFIGURATION), baseFile.resolve(Locations.CONFIGURATION));
