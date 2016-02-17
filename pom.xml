@@ -59,12 +59,14 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.as.console>
          -->
+        <version.commons-io>2.4</version.commons-io>
         <version.junit>4.11</version.junit>
 
         <version.org.apache.maven.maven-core>3.1.0</version.org.apache.maven.maven-core>
         <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>3.2.0
         </version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
         <version.org.apache.maven.plugin-tools>${version.plugin.plugin}</version.org.apache.maven.plugin-tools>
+        <version.org.apache.maven.plugins.maven-invoker-plugin>2.0.0</version.org.apache.maven.plugins.maven-invoker-plugin>
         <version.org.codehaus.plexus.plexus-utils>3.0.10</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
         <version.org.jboss.jandex>1.2.1.Final</version.org.jboss.jandex>

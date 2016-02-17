@@ -1,0 +1,7 @@
+<?xml version="1.0" ?>
+
+<feature-pack xmlns="urn:wildfly:feature-pack:1.1">
+    <config>
+        <standalone template="configuration/standalone/template.xml" subsystems="configuration/standalone/subsystems.xml" output-file="standalone/configuration/standalone.xml"/>
+    </config>
+</feature-pack>
