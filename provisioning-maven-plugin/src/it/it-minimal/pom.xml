@@ -30,8 +30,8 @@
     </properties>
 
     <modules>
-        <module>it-minimal-feature-pack</module>
-        <module>it-minimal-dist</module>
+        <module>feature-pack</module>
+        <module>dist</module>
     </modules>
 
 </project>

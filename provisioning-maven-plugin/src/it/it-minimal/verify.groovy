@@ -16,21 +16,23 @@ import org.apache.commons.io.FileUtils;
  * limitations under the License.
  */
 
-Assertions assertions = new Assertions(basedir, "it-minimal-feature-pack")
+String rootArtifactId = basedir.getName()
+
+Assertions assertions = new Assertions(basedir, rootArtifactId, "feature-pack")
 assertions.assertExpected("configuration/standalone/subsystems.xml")
 assertions.assertExpected("configuration/standalone/template.xml")
 assertions.assertExpected("subsystem-templates/example-subsystem.xml")
 assertions.assertExpected("wildfly-feature-pack.xml")
 
-assertions = new Assertions(basedir, "it-minimal-dist")
+assertions = new Assertions(basedir, rootArtifactId, "dist")
 assertions.assertExpected("standalone/configuration/standalone.xml")
 
 public class Assertions {
     File actualRootDir
     File expectedRootDir
-    Assertions(File basedir, String artifactId) {
-        this.actualRootDir = new File(basedir, "${artifactId}/target/${artifactId}-1.0-SNAPSHOT")
-        this.expectedRootDir = new File(basedir, "${artifactId}/it-expected")
+    Assertions(File basedir, String artifactId, String suffix) {
+        this.actualRootDir = new File(basedir, "${suffix}/target/${artifactId}-${suffix}-1.0-SNAPSHOT")
+        this.expectedRootDir = new File(basedir, "${suffix}/it-expected")
     }
     void assertExpected(String path) {
         File expected = new File(expectedRootDir, path)
