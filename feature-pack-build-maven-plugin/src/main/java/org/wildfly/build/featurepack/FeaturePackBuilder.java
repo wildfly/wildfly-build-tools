@@ -135,49 +135,50 @@ public class FeaturePackBuilder {
 
     private static void processModulesDirectory(Set<ModuleIdentifier> packProvidedModules, File serverDirectory, final ArtifactResolver artifactResolver, final Map<Artifact.GACE, String> artifactVersionMap,  final List<String> errors) throws IOException {
         final Path modulesDir = Paths.get(new File(serverDirectory, Locations.MODULES).getAbsolutePath());
-        final HashSet<ModuleIdentifier> knownModules = new HashSet<>(packProvidedModules);
-        final Map<ModuleIdentifier, Set<ModuleIdentifier>> requiredDepds = new HashMap<>();
-        Files.walkFileTree(modulesDir, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                if (!file.getFileName().toString().equals("module.xml")) {
+        if (Files.exists(modulesDir)) {
+            final HashSet<ModuleIdentifier> knownModules = new HashSet<>(packProvidedModules);
+            final Map<ModuleIdentifier, Set<ModuleIdentifier>> requiredDepds = new HashMap<>();
+            Files.walkFileTree(modulesDir, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if (!file.getFileName().toString().equals("module.xml")) {
+                        return FileVisitResult.CONTINUE;
+                    }
+                    try {
+                        ModuleParseResult result = ModuleParser.parse(file);
+                        knownModules.add(result.getIdentifier());
+                        for (ModuleParseResult.ArtifactName artifactName : result.getArtifacts()) {
+                            Artifact artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
+                            if(artifact == null) {
+                                errors.add("Could not determine version for artifact " + artifactName);
+                            }
+                            artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
+                        }
+                        for(ModuleParseResult.ModuleDependency dep : result.getDependencies()) {
+                            if(!dep.isOptional()) {
+                                Set<ModuleIdentifier> dependees = requiredDepds.get(dep.getModuleId());
+                                if(dependees == null) {
+                                    requiredDepds.put(dep.getModuleId(), dependees = new HashSet<>());
+                                }
+                                dependees.add(result.getIdentifier());
+                            }
+                        }
+
+                    } catch (XMLStreamException e) {
+                        throw new RuntimeException(e);
+                    }
+
                     return FileVisitResult.CONTINUE;
                 }
-                try {
-                    ModuleParseResult result = ModuleParser.parse(file);
-                    knownModules.add(result.getIdentifier());
-                    for (ModuleParseResult.ArtifactName artifactName : result.getArtifacts()) {
-                        Artifact artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
-                        if(artifact == null) {
-                            errors.add("Could not determine version for artifact " + artifactName);
-                        }
-                        artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
-                    }
-                    for(ModuleParseResult.ModuleDependency dep : result.getDependencies()) {
-                        if(!dep.isOptional()) {
-                            Set<ModuleIdentifier> dependees = requiredDepds.get(dep.getModuleId());
-                            if(dependees == null) {
-                                requiredDepds.put(dep.getModuleId(), dependees = new HashSet<>());
-                            }
-                            dependees.add(result.getIdentifier());
-                        }
-                    }
+            });
 
-                } catch (XMLStreamException e) {
-                    throw new RuntimeException(e);
+            //now look for unresolved dependencies
+            for(Map.Entry<ModuleIdentifier, Set<ModuleIdentifier>> dep : requiredDepds.entrySet()) {
+                if(!knownModules.contains(dep.getKey())) {
+                    errors.add("Missing module " + dep.getKey() + ". Module was required by " + dep.getValue());
                 }
-
-                return FileVisitResult.CONTINUE;
-            }
-        });
-
-        //now look for unresolved dependencies
-        for(Map.Entry<ModuleIdentifier, Set<ModuleIdentifier>> dep : requiredDepds.entrySet()) {
-            if(!knownModules.contains(dep.getKey())) {
-                errors.add("Missing module " + dep.getKey() + ". Module was required by " + dep.getValue());
             }
         }
-
     }
 
     private static void processVersions(FeaturePackDescription featurePackDescription, ArtifactResolver artifactResolver, Map<Artifact.GACE, String> artifactVersionMap) {
@@ -232,6 +233,9 @@ public class FeaturePackBuilder {
 
     private static void writeFeaturePackXml(FeaturePackDescription featurePackDescription, File serverDirectory) throws IOException, XMLStreamException {
         final File outputFile = new File(serverDirectory, Locations.FEATURE_PACK_DESCRIPTION);
+        if (!outputFile.getParentFile().exists()) {
+            outputFile.getParentFile().mkdirs();
+        }
         FeaturePackDescriptionXMLWriter11.INSTANCE.write(featurePackDescription, outputFile);
     }
 
