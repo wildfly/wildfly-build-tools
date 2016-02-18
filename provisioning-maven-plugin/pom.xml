@@ -225,13 +225,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                        <dependencies>
-                            <dependency>
-                                <groupId>commons-io</groupId>
-                                <artifactId>commons-io</artifactId>
-                                <version>${version.commons-io}</version>
-                            </dependency>
-                        </dependencies>
                     </plugin>
                 </plugins>
 
