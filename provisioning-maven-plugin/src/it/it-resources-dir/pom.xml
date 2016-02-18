@@ -20,7 +20,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.wildfly.build</groupId>
-    <artifactId>it-minimal</artifactId>
+    <artifactId>it-resources-dir</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <description>Built a feature pack with the default configDir</description>
