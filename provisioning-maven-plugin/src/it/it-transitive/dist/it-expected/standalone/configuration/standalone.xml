@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+
+<server xmlns="urn:jboss:domain:4.0">
+    <extensions>
+        <extension module="org.wildfly.example-subsystem"/>
+    </extensions>
+    <profile>
+        <subsystem xmlns="urn:jboss:domain:example-subsystem:1.0">
+            <key name="key1" value="value1"/>
+        </subsystem>
+    </profile>
+</server>
