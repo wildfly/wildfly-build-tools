@@ -49,6 +49,7 @@
         <xs:sequence>
             <xs:element name="standalone" type="config-file-type" minOccurs="0" maxOccurs="unbounded" />
             <xs:element name="domain" type="config-file-type" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="host" type="config-file-type" minOccurs="0" maxOccurs="unbounded" />
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="config-file-type">
