@@ -77,6 +77,8 @@
         <version.org.jboss.logging>3.3.0.Final</version.org.jboss.logging>
         <version.org.jboss.logging.processor>2.0.1.Final</version.org.jboss.logging.processor>
         <version.org.jboss.logmanager>2.0.4.Final</version.org.jboss.logmanager>
+        <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
+        <version.com.fasterxml.woodstox.woodstox-core>5.0.3</version.com.fasterxml.woodstox.woodstox-core>
 
         <!-- Surefire args -->
         <surefire.jpda.args/>
@@ -265,6 +267,30 @@
                 <groupId>org.jboss</groupId>
                 <artifactId>staxmapper</artifactId>
                 <version>${version.org.jboss.staxmapper}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${version.com.fasterxml.woodstox.woodstox-core}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.codehaus.woodstox</groupId>
+                <artifactId>stax2-api</artifactId>
+                <version>${version.org.codehaus.woodstox.stax2-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <!-- dependencies to annotations -->
