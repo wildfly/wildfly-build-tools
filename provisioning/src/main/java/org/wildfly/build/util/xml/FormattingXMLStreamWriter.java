@@ -167,8 +167,8 @@ public final class FormattingXMLStreamWriter implements XMLStreamWriter, XMLStre
     }
 
     public void writeEndDocument() throws XMLStreamException {
-        delegate.writeEndDocument();
         nl();
+        delegate.writeEndDocument();
         state = END_DOCUMENT;
     }
 
