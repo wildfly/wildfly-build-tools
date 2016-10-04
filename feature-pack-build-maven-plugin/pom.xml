@@ -104,6 +104,14 @@
             <groupId>org.jboss</groupId>
             <artifactId>staxmapper</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>woodstox-core-asl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.codehaus.woodstox</groupId>
+            <artifactId>stax2-api</artifactId>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
