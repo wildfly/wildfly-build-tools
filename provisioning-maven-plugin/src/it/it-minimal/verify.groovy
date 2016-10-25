@@ -1,4 +1,3 @@
-import org.apache.commons.io.FileUtils;
 
 /*
  * Copyright 2016 Red Hat, Inc.
@@ -39,6 +38,6 @@ public class Assertions {
         File actual = new File(actualRootDir, path)
         assert expected.exists()
         assert actual.exists()
-        assert org.codehaus.plexus.util.FileUtils.contentEquals(expected, actual)
+        assert org.apache.commons.io.FileUtils.contentEqualsIgnoreEOL(expected, actual, "utf-8")
     }
 }

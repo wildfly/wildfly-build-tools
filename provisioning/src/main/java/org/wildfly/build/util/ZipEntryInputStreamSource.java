@@ -55,7 +55,7 @@ public class ZipEntryInputStreamSource implements InputStreamSource {
         private final ZipFile zipFile;
         private final InputStream zipEntryInputStream;
 
-        public ZipEntryInputStream(ZipFile zipFile, InputStream zipEntryInputStream) {
+        ZipEntryInputStream(ZipFile zipFile, InputStream zipEntryInputStream) {
             this.zipFile = zipFile;
             this.zipEntryInputStream = zipEntryInputStream;
         }
