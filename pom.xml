@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>19</version>
+        <version>21</version>
     </parent>
 
     <groupId>org.wildfly.build</groupId>
@@ -59,20 +59,26 @@
             versions, add the artifactId or other qualifier to the property name.
             For example: <version.org.jboss.as.console>
          -->
-        <version.junit>4.11</version.junit>
+        <!-- overrides of jboss-parent-->
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <version.plugin.plugin>3.5</version.plugin.plugin>
+        <!-- end overrides  -->
 
-        <version.org.apache.maven.maven-core>3.1.0</version.org.apache.maven.maven-core>
-        <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>3.2.0
-        </version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
+        <version.junit>4.12</version.junit>
+
+        <version.org.apache.maven.maven-core>3.2.5</version.org.apache.maven.maven-core>
+        <version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>3.3.0</version.org.apache.maven.plugin-testing.maven-plugin-testing-harness>
         <version.org.apache.maven.plugin-tools>${version.plugin.plugin}</version.org.apache.maven.plugin-tools>
         <version.org.apache.maven.plugins.maven-invoker-plugin>2.0.0</version.org.apache.maven.plugins.maven-invoker-plugin>
-        <version.org.codehaus.plexus.plexus-utils>3.0.10</version.org.codehaus.plexus.plexus-utils>
-        <version.org.eclipse.aether>1.0.0.v20140518</version.org.eclipse.aether>
-        <version.org.jboss.jandex>1.2.1.Final</version.org.jboss.jandex>
-        <version.org.jboss.logging>3.1.4.GA</version.org.jboss.logging>
-        <version.org.jboss.logging.processor>1.2.0.Final</version.org.jboss.logging.processor>
-        <version.org.jboss.logmanager>1.5.2.Final</version.org.jboss.logmanager>
-        <version.org.sonatype.aether>1.13.1</version.org.sonatype.aether>
+        <version.org.codehaus.plexus.plexus-utils>3.0.24</version.org.codehaus.plexus.plexus-utils>
+        <version.org.eclipse.aether>1.1.0</version.org.eclipse.aether>
+        <version.org.jboss.jandex>2.0.3.Final</version.org.jboss.jandex>
+        <version.org.jboss.logging>3.3.0.Final</version.org.jboss.logging>
+        <version.org.jboss.logging.processor>2.0.1.Final</version.org.jboss.logging.processor>
+        <version.org.jboss.logmanager>2.0.4.Final</version.org.jboss.logmanager>
+        <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
+        <version.com.fasterxml.woodstox.woodstox-core>5.0.3</version.com.fasterxml.woodstox.woodstox-core>
 
         <!-- Surefire args -->
         <surefire.jpda.args/>
@@ -80,8 +86,8 @@
 
         <!-- Checkstyle configuration -->
         <linkXRef>false</linkXRef>
-        <version.org.wildfly.checkstyle-config>1.0.4.Final</version.org.wildfly.checkstyle-config>
-        <version.org.jboss.staxmapper>1.1.0.Final</version.org.jboss.staxmapper>
+        <version.org.wildfly.checkstyle-config>1.0.5.Final</version.org.wildfly.checkstyle-config>
+        <version.org.jboss.staxmapper>1.3.0.Final</version.org.jboss.staxmapper>
     </properties>
 
     <modules>
@@ -96,25 +102,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>enforce-java</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                        <configuration>
-                            <rules>
-                                <requireJavaVersion>
-                                    <version>1.7</version>
-                                </requireJavaVersion>
-                            </rules>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
         <pluginManagement>
@@ -282,6 +269,30 @@
                 <version>${version.org.jboss.staxmapper}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${version.com.fasterxml.woodstox.woodstox-core}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.codehaus.woodstox</groupId>
+                <artifactId>stax2-api</artifactId>
+                <version>${version.org.codehaus.woodstox.stax2-api}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.xml.stream</groupId>
+                        <artifactId>stax-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <!-- dependencies to annotations -->
             <dependency>
                 <groupId>org.apache.maven.plugin-tools</groupId>
@@ -345,24 +356,6 @@
                 <groupId>org.eclipse.aether</groupId>
                 <artifactId>aether-transport-http</artifactId>
                 <version>${version.org.eclipse.aether}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.sonatype.aether</groupId>
-                <artifactId>aether-api</artifactId>
-                <version>${version.org.sonatype.aether}</version>
-                <scope>provided</scope>
-                <!-- Used in maven 3.0.x -->
-                <optional>true</optional>
-            </dependency>
-
-            <dependency>
-                <groupId>org.sonatype.aether</groupId>
-                <artifactId>aether-util</artifactId>
-                <version>${version.org.sonatype.aether}</version>
-                <scope>provided</scope>
-                <!-- Used in maven 3.0.x -->
-                <optional>true</optional>
             </dependency>
 
             <dependency>

@@ -79,14 +79,7 @@
             <artifactId>jboss-logging-annotations</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.sonatype.aether</groupId>
-            <artifactId>aether-api</artifactId>
-            <scope>provided</scope>
-            <!-- Used in maven 3.0.x -->
-            <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.sonatype.aether</groupId>
+            <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-util</artifactId>
             <scope>provided</scope>
             <!-- Used in maven 3.0.x -->
