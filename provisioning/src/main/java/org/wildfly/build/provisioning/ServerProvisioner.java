@@ -156,6 +156,7 @@ public class ServerProvisioner {
     }
 
     private void processCopyArtifacts(List<CopyArtifact> copyArtifacts, ArtifactResolver artifactResolver, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory) throws IOException {
+        Set<String> filesProcessedThisPack = new HashSet<>();
         for (CopyArtifact copyArtifact : copyArtifacts) {
 
             //first resolve the artifact
@@ -175,9 +176,10 @@ public class ServerProvisioner {
                 location += artifactFile.getName();
             }
 
-            if (!filesProcessed.add(location)) {
+            if (filesProcessed.contains(location)) {
                 continue;
             }
+            filesProcessedThisPack.add(location);
             File target = new File(outputDirectory, location);
             if (!target.getParentFile().isDirectory()) {
                 if (!target.getParentFile().mkdirs()) {
@@ -192,6 +194,7 @@ public class ServerProvisioner {
 
             extractSchema(schemaOutputDirectory, artifact, artifactFile);
         }
+        filesProcessed.addAll(filesProcessedThisPack);
     }
 
     private void extractSchema(File schemaOutputDirectory, Artifact artifact, File artifactFile) throws IOException {
