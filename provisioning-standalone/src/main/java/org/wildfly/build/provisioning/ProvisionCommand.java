@@ -61,7 +61,7 @@ public class ProvisionCommand {
             }
             // provision the server
             final File outputDir = new File(buildDir, "wildfly");
-            ServerProvisioner.build(serverProvisioningDescription, outputDir, aetherArtifactFileResolver, overrideArtifactResolver);
+            ServerProvisioner.build(serverProvisioningDescription, outputDir, false, aetherArtifactFileResolver, overrideArtifactResolver);
             System.out.print("Server provisioning at "+outputDir+" complete.");
         } catch (Exception e) {
             throw new RuntimeException(e);
