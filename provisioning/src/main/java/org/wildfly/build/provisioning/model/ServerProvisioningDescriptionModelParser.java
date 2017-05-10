@@ -32,6 +32,7 @@ public class ServerProvisioningDescriptionModelParser {
 
     private static final QName ROOT_1_0 = new QName(ServerProvisioningDescriptionModelParser10.NAMESPACE_1_0, Element.SERVER_PROVISIONING.getLocalName());
     private static final QName ROOT_1_1 = new QName(ServerProvisioningDescriptionModelParser11.NAMESPACE_1_1, Element.SERVER_PROVISIONING.getLocalName());
+    private static final QName ROOT_1_2 = new QName(ServerProvisioningDescriptionModelParser12.NAMESPACE_1_2, Element.SERVER_PROVISIONING.getLocalName());
 
     private static final XMLInputFactory INPUT_FACTORY = XMLInputFactory.newInstance();
 
@@ -41,6 +42,7 @@ public class ServerProvisioningDescriptionModelParser {
         mapper = XMLMapper.Factory.create();
         mapper.registerRootElement(ROOT_1_0, new ServerProvisioningDescriptionModelParser10(properties));
         mapper.registerRootElement(ROOT_1_1, new ServerProvisioningDescriptionModelParser11(properties));
+        mapper.registerRootElement(ROOT_1_2, new ServerProvisioningDescriptionModelParser12(properties));
     }
 
     public ServerProvisioningDescription parse(final InputStream input) throws XMLStreamException {

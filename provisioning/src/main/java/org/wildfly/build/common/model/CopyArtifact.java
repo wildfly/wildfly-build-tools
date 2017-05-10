@@ -30,13 +30,20 @@ public class CopyArtifact {
     private final String artifact;
     private final String toLocation;
     private final boolean extract;
+    private final String fromLocation;
     private final List<FileFilter> filters = new ArrayList<>();
 
 
-    public CopyArtifact(String artifact, String toLocation, boolean extract) {
+    public CopyArtifact(String artifact, String toLocation, boolean extract, String fromLocation) {
         this.artifact = artifact;
         this.toLocation = toLocation;
-        this.extract = extract;
+        this.extract = extract || fromLocation != null;
+        if ( fromLocation != null ) {
+            if ( ! fromLocation.endsWith( "/" ) ) {
+                fromLocation = fromLocation + "/";
+            }
+        }
+        this.fromLocation = fromLocation;
     }
 
     public String getArtifact() {
@@ -63,4 +70,17 @@ public class CopyArtifact {
         }
         return true; //default include
     }
+
+    public String relocatedPath(final String path) {
+        if ( this.fromLocation == null ) {
+            return path;
+        }
+
+        if ( path.startsWith( this.fromLocation ) ) {
+            return path.substring( this.fromLocation.length() );
+        }
+
+        return null;
+    }
+
 }

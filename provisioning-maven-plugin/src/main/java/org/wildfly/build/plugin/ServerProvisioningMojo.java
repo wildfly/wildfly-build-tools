@@ -101,6 +101,9 @@ public class ServerProvisioningMojo extends AbstractMojo {
     @Parameter(alias = "system-property-version-overrides", defaultValue = "false", readonly = true)
     private Boolean systemPropertyVersionOverrides = false;
 
+    @Parameter(alias = "overlay", defaultValue = "false")
+    private Boolean overlay = false;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try (FileInputStream configStream = new FileInputStream(new File(configDir, configFile))) {
@@ -115,11 +118,13 @@ public class ServerProvisioningMojo extends AbstractMojo {
             final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(properties)).parse(configStream);
             AetherArtifactFileResolver aetherArtifactFileResolver = new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos);
             ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
+            overrideArtifactResolver = new DelegatingArtifactResolver(new MavenProjectArtifactResolver(this.project), overrideArtifactResolver);
             if(systemPropertyVersionOverrides) {
                 overrideArtifactResolver = new DelegatingArtifactResolver(new PropertiesBasedArtifactResolver(properties), overrideArtifactResolver);
             }
 
-            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), aetherArtifactFileResolver, overrideArtifactResolver);
+
+            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), overlay, aetherArtifactFileResolver, overrideArtifactResolver);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

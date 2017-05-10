@@ -38,10 +38,19 @@ public class MavenProjectArtifactResolver implements ArtifactResolver {
             sb.append(artifact.getGACE().getGroupId());
             sb.append(':');
             sb.append(artifact.getGACE().getArtifactId());
+            String extension = artifact.getGACE().getExtension();
             if (artifact.getGACE().getClassifier() != null && !artifact.getGACE().getClassifier().isEmpty()) {
-                artifactMap.put(sb.append("::").append(artifact.getGACE().getClassifier()).toString(), artifact);
+                if ( extension == null || extension.equals("jar")) {
+                    artifactMap.put(sb.append("::").append(artifact.getGACE().getClassifier()).toString(), artifact);
+                } else {
+                    artifactMap.put(sb.append(":").append(extension).append(":").append(artifact.getGACE().getClassifier()).toString(), artifact);
+                }
             } else {
-                artifactMap.put(sb.toString(), artifact);
+                if ( extension == null || extension.equals("jar")) {
+                    artifactMap.put(sb.toString(), artifact);
+                } else {
+                    artifactMap.put(sb.append(":").append(extension).toString(), artifact);
+                }
             }
         }
     }

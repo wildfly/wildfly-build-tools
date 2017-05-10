@@ -79,6 +79,7 @@ public class CopyArtifactsModelParser10 {
         UNKNOWN(null),
         ARTIFACT("artifact"),
         TO_LOCATION("to-location"),
+        FROM_LOCATION("from-location"),
         EXTRACT("extract"),
         ;
 
@@ -88,6 +89,7 @@ public class CopyArtifactsModelParser10 {
             Map<String, Attribute> attributesMap = new HashMap<>();
             attributesMap.put(ARTIFACT.getLocalName(), ARTIFACT);
             attributesMap.put(TO_LOCATION.getLocalName(), TO_LOCATION);
+            attributesMap.put(FROM_LOCATION.getLocalName(), FROM_LOCATION);
             attributesMap.put(EXTRACT.getLocalName(), EXTRACT);
             attributes = attributesMap;
         }
@@ -152,7 +154,8 @@ public class CopyArtifactsModelParser10 {
 
     private void parseCopyArtifact(XMLStreamReader reader, final List<CopyArtifact> result) throws XMLStreamException {
         String artifact = null;
-        String location = null;
+        String toLocation = null;
+        String fromLocation = null;
         boolean extract = false;
         final Set<Attribute> required = EnumSet.of(Attribute.ARTIFACT, Attribute.TO_LOCATION);
         final int count = reader.getAttributeCount();
@@ -164,7 +167,10 @@ public class CopyArtifactsModelParser10 {
                     artifact = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
                     break;
                 case TO_LOCATION:
-                    location = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                    toLocation = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                    break;
+                case FROM_LOCATION:
+                    fromLocation = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
                     break;
                 case EXTRACT:
                     extract = Boolean.parseBoolean(propertyReplacer.replaceProperties(reader.getAttributeValue(i)));
@@ -177,7 +183,7 @@ public class CopyArtifactsModelParser10 {
             throw ParsingUtils.missingAttributes(reader.getLocation(), required);
         }
 
-        CopyArtifact copyArtifact = new CopyArtifact(artifact, location, extract);
+        CopyArtifact copyArtifact = new CopyArtifact(artifact, toLocation, extract, fromLocation);
         result.add(copyArtifact);
         while (reader.hasNext()) {
             switch (reader.nextTag()) {

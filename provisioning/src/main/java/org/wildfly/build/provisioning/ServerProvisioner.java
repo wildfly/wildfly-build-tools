@@ -41,6 +41,7 @@ import org.wildfly.build.util.ModuleParseResult;
 import org.wildfly.build.util.ZipEntryInputStreamSource;
 
 import javax.xml.stream.XMLStreamException;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -79,13 +80,19 @@ public class ServerProvisioner {
     private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
 
     private final ServerProvisioningDescription description;
+
     private final File outputDirectory;
+
     private final ArtifactFileResolver artifactFileResolver;
+
     private final ArtifactResolver versionOverrideArtifactResolver;
 
-    public ServerProvisioner(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+    private final boolean overlay;
+
+    public ServerProvisioner(ServerProvisioningDescription description, File outputDirectory, boolean overlay, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
         this.description = description;
         this.outputDirectory = outputDirectory;
+        this.overlay = overlay;
         this.artifactFileResolver = artifactFileResolver;
         this.versionOverrideArtifactResolver = versionOverrideArtifactResolver;
     }
@@ -120,13 +127,17 @@ public class ServerProvisioner {
 
             // process everything else for each feature pack
             for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
-                processSubsystemConfigInFeaturePack(provisioningFeaturePack, serverProvisioning, artifactFileResolver);
-                processFeaturePackCopyArtifacts(provisioningFeaturePack.getFeaturePack(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory, description.isExcludeDependencies());
-                processProvisioningFeaturePackContents(provisioningFeaturePack, outputDirectory, filesProcessed, description.isExcludeDependencies());
-                processFeaturePackFilePermissions(provisioningFeaturePack.getFeaturePack(), outputDirectory, description.isExcludeDependencies());
+                if ( ! overlay ) {
+                    processSubsystemConfigInFeaturePack(provisioningFeaturePack, serverProvisioning, artifactFileResolver);
+                }
+                processFeaturePackCopyArtifacts(provisioningFeaturePack.getFeaturePack(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory, overlay || description.isExcludeDependencies());
+                processProvisioningFeaturePackContents(provisioningFeaturePack, outputDirectory, filesProcessed, overlay || description.isExcludeDependencies());
+                processFeaturePackFilePermissions(provisioningFeaturePack.getFeaturePack(), outputDirectory, overlay || description.isExcludeDependencies());
             }
             // process the server config
-            processConfig(serverProvisioning, outputDirectory, filesProcessed);
+            if ( ! overlay ) {
+                processConfig(serverProvisioning, outputDirectory, filesProcessed);
+            }
         } catch (Throwable e) {
             throw new RuntimeException(e);
         } finally {
@@ -150,8 +161,8 @@ public class ServerProvisioner {
         serverProvisioning.getConfig().getInputStreamSources().addAllSubsystemFileSourcesFromZipFile(artifactFile);
     }
 
-    public static void build(ServerProvisioningDescription description, File outputDirectory, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
-        ServerProvisioner provisioner = new ServerProvisioner(description, outputDirectory, artifactFileResolver, versionOverrideArtifactResolver);
+    public static void build(ServerProvisioningDescription description, File outputDirectory, boolean overlay, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+        ServerProvisioner provisioner = new ServerProvisioner(description, outputDirectory, overlay, artifactFileResolver, versionOverrideArtifactResolver);
         provisioner.build();
     }
 
@@ -170,7 +181,7 @@ public class ServerProvisioner {
             }
 
             String location = copyArtifact.getToLocation();
-            if(location.endsWith("/")) {
+            if (location.endsWith("/")) {
                 //if the to location ends with a / then it is a directory
                 //so we need to append the artifact name
                 location += artifactFile.getName();
@@ -201,7 +212,7 @@ public class ServerProvisioner {
         if (description.isExtractSchemas() && schemaOutputDirectory != null) {
             String groupId = artifact.getGACE().getGroupId();
             // extract schemas, if any
-            if (description.getExtractSchemasGroups().contains(groupId)){
+            if (description.getExtractSchemasGroups().contains(groupId)) {
                 logger.debugf("extracting schemas for artifact: '%s'", artifact);
                 FileUtils.extractSchemas(artifactFile, schemaOutputDirectory);
             }
@@ -215,7 +226,7 @@ public class ServerProvisioner {
         Set<ModuleIdentifier> moduleIdentifiers = new HashSet<>();
         for (ServerProvisioningFeaturePack provisioningFeaturePack : serverProvisioning.getFeaturePacks()) {
             getLog().debugf("Gathering modules for provisioning feature pack %s", provisioningFeaturePack.getFeaturePack().getFeaturePackFile());
-            for (FeaturePack.Module module : provisioningFeaturePack.getModules(artifactFileResolver, serverProvisioning.getDescription().isExcludeDependencies()).values()) {
+            for (FeaturePack.Module module : provisioningFeaturePack.getModules(artifactFileResolver, overlay || serverProvisioning.getDescription().isExcludeDependencies()).values()) {
                 final ModuleIdentifier moduleIdentifier = module.getIdentifier();
                 if (moduleIdentifiers.add(moduleIdentifier)) {
                     getLog().debugf("Adding module %s from feature pack %s", moduleIdentifier, module.getFeaturePack().getFeaturePackFile());
@@ -298,14 +309,14 @@ public class ServerProvisioner {
                             // it's also possible that this is an element with nested content
                             // this regex involves a good deal of backtracking but it seems to work
                             moduleXmlContents =
-                                Pattern.compile(
-                                    "(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
-                                    Pattern.DOTALL
-                                )
-                                .matcher(moduleXmlContents)
-                                .replaceAll(
-                                    "$1<artifact name=\"\\${" + artifactCoords + "}\">$2</artifact>$1<resource-root path=\"" + target.getName() + "\">$2</resource-root>"
-                                );
+                                    Pattern.compile(
+                                            "(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
+                                            Pattern.DOTALL
+                                    )
+                                            .matcher(moduleXmlContents)
+                                            .replaceAll(
+                                                    "$1<artifact name=\"\\${" + artifactCoords + "}\">$2</artifact>$1<resource-root path=\"" + target.getName() + "\">$2</resource-root>"
+                                            );
                         }
                         if (!thinServer) {
                             // copy the artifact
@@ -316,14 +327,14 @@ public class ServerProvisioner {
                             // it's also possible that this is an element with nested content
                             // this regex involves a good deal of backtracking but it seems to work
                             moduleXmlContents =
-                                Pattern.compile(
-                                    "<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
-                                    Pattern.DOTALL
-                                )
-                                .matcher(moduleXmlContents)
-                                .replaceAll(
-                                    "<resource-root path=\"" + artifactFileName + "\">$1</resource-root>"
-                                );
+                                    Pattern.compile(
+                                            "<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
+                                            Pattern.DOTALL
+                                    )
+                                            .matcher(moduleXmlContents)
+                                            .replaceAll(
+                                                    "<resource-root path=\"" + artifactFileName + "\">$1</resource-root>"
+                                            );
                         }
                     } catch (Throwable t) {
                         throw new RuntimeException("Could not extract resources from " + artifactName, t);
@@ -362,10 +373,10 @@ public class ServerProvisioner {
             getLog().debugf("Assembling config file %s", provisioningConfigFile.getOutputFile());
             filesProcessed.add(provisioningConfigFile.getOutputFile());
             new ConfigurationAssembler(provisioningConfig.getInputStreamSources(),
-                    provisioningConfigFile.getTemplateInputStreamSource(),
-                    "domain",
-                    provisioningConfigFile.getSubsystems(),
-                    new File(outputDirectory, provisioningConfigFile.getOutputFile()))
+                                       provisioningConfigFile.getTemplateInputStreamSource(),
+                                       "domain",
+                                       provisioningConfigFile.getSubsystems(),
+                                       new File(outputDirectory, provisioningConfigFile.getOutputFile()))
                     .assemble();
         }
         for (ServerProvisioning.ConfigFile provisioningConfigFile : provisioningConfig.getStandaloneConfigFiles().values()) {
@@ -376,10 +387,10 @@ public class ServerProvisioner {
             getLog().debugf("Assembling config file %s", provisioningConfigFile.getOutputFile());
             filesProcessed.add(provisioningConfigFile.getOutputFile());
             new ConfigurationAssembler(provisioningConfig.getInputStreamSources(),
-                    provisioningConfigFile.getTemplateInputStreamSource(),
-                    "server",
-                    provisioningConfigFile.getSubsystems(),
-                    new File(outputDirectory, provisioningConfigFile.getOutputFile()))
+                                       provisioningConfigFile.getTemplateInputStreamSource(),
+                                       "server",
+                                       provisioningConfigFile.getSubsystems(),
+                                       new File(outputDirectory, provisioningConfigFile.getOutputFile()))
                     .assemble();
         }
         for (ServerProvisioning.ConfigFile provisioningConfigFile : provisioningConfig.getHostConfigFiles().values()) {
@@ -390,17 +401,17 @@ public class ServerProvisioner {
             getLog().debugf("Assembling config file %s", provisioningConfigFile.getOutputFile());
             filesProcessed.add(provisioningConfigFile.getOutputFile());
             new ConfigurationAssembler(provisioningConfig.getInputStreamSources(),
-                    provisioningConfigFile.getTemplateInputStreamSource(),
-                    "host",
-                    provisioningConfigFile.getSubsystems(),
-                    new File(outputDirectory, provisioningConfigFile.getOutputFile()))
+                                       provisioningConfigFile.getTemplateInputStreamSource(),
+                                       "host",
+                                       provisioningConfigFile.getSubsystems(),
+                                       new File(outputDirectory, provisioningConfigFile.getOutputFile()))
                     .assemble();
         }
     }
 
     private void processFeaturePackConfig(ServerProvisioningFeaturePack provisioningFeaturePack, ServerProvisioning.Config provisioningConfig) throws IOException, XMLStreamException {
         FeaturePack featurePack = provisioningFeaturePack.getFeaturePack();
-        getLog().debug("Processing provisioning feature pack "+featurePack.getFeaturePackFile()+" configs");
+        getLog().debug("Processing provisioning feature pack " + featurePack.getFeaturePackFile() + " configs");
         try (ZipFile zipFile = new ZipFile(featurePack.getFeaturePackFile())) {
             for (ServerProvisioningFeaturePack.ConfigFile serverProvisioningFeaturePackConfigFile : provisioningFeaturePack.getDomainConfigFiles()) {
                 processFeaturePackConfigFile(serverProvisioningFeaturePackConfigFile, zipFile, provisioningFeaturePack, provisioningConfig.getDomainConfigFiles());
@@ -461,7 +472,7 @@ public class ServerProvisioner {
 
     private void processFeaturePackCopyArtifacts(FeaturePack featurePack, File outputDirectory, Set<String> filesProcessed, ArtifactFileResolver artifactFileResolver, File schemaOutputDirectory, boolean excludeDependencies) throws IOException {
         processCopyArtifacts(featurePack.getDescription().getCopyArtifacts(), featurePack.getArtifactResolver(), outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory);
-        if(!excludeDependencies) {
+        if (!excludeDependencies) {
             for (FeaturePack dependency : featurePack.getDependencies()) {
                 processFeaturePackCopyArtifacts(dependency, outputDirectory, filesProcessed, artifactFileResolver, schemaOutputDirectory, excludeDependencies);
             }
@@ -501,7 +512,7 @@ public class ServerProvisioner {
                 FileUtils.extractFile(jar, contentFile, new java.io.File(outputDirectory, outputFile));
             }
         }
-        if(!excludeDependencies) {
+        if (!excludeDependencies) {
             for (FeaturePack dependency : featurePack.getDependencies()) {
                 processFeaturePackContents(dependency, contentFilters, outputDirectory, filesProcessed, excludeDependencies);
             }
@@ -525,6 +536,7 @@ public class ServerProvisioner {
                 }
                 return FileVisitResult.CONTINUE;
             }
+
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 String relative = baseDir.relativize(file).toString();
@@ -539,7 +551,7 @@ public class ServerProvisioner {
                 return FileVisitResult.CONTINUE;
             }
         });
-        if(!excludeDependencies) {
+        if (!excludeDependencies) {
             for (FeaturePack dependency : featurePack.getDependencies()) {
                 processFeaturePackFilePermissions(dependency, outputDirectory, excludeDependencies);
             }
@@ -553,10 +565,10 @@ public class ServerProvisioner {
                 ZipEntry entry = entries.nextElement();
                 if (copy.includeFile(entry.getName())) {
                     if (entry.isDirectory()) {
-                        new File(target, entry.getName()).mkdirs();
+                        new File(target, copy.relocatedPath(entry.getName())).mkdirs();
                     } else {
                         try (InputStream in = zip.getInputStream(entry)) {
-                            FileUtils.copyFile(in, new File(target, entry.getName()));
+                            FileUtils.copyFile(in, new File(target, copy.relocatedPath(entry.getName())));
                         }
                     }
                 }
