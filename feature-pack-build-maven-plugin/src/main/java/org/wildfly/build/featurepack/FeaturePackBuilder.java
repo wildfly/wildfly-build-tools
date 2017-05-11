@@ -104,6 +104,9 @@ public class FeaturePackBuilder {
                 continue;
             }
             Artifact dependencyArtifact = buildArtifactResolver.getArtifact(dependency);
+            if(dependencyArtifact == null) {
+                dependencyArtifact = buildArtifactResolver.getArtifact(dependency + ":zip"); //feature packs should be zip artifacts
+            }
             if (dependencyArtifact == null) {
                 throw new RuntimeException("Could not find artifact for " + dependency);
             }
