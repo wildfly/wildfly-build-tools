@@ -7,7 +7,7 @@ a lightweight artifact that contains a complete description of a set of
 server features.  The **wildfly-server-provisioning-maven-plugin** is used to 
 provision the servers creating the full distribution.
 
-##Feature Packs
+## Feature Packs
 
 The wildfly build process consists of first generating a Wildfly 'feature pack', 
 which is a lightweight artifact that contains a complete description of a set 
@@ -37,7 +37,7 @@ at provisioning time.
 **configuration**: contains configuration templates that are used to generate server configuration files.
 
 
-##Usage
+## Usage
 
 The plugins are configured in the "plugins" section of the pom.
 
@@ -80,7 +80,7 @@ The plugins are configured in the "plugins" section of the pom.
     </plugins>
 
 
-###Config Parameters
+### Config Parameters
 
 Most of the configuration for each plugin is contained in a separate configuration
 file defined by the parameter *config-file*.  The schema for the config file for the **wildfly-feature-pack-build-maven-plugin** can be found in the sources here:
@@ -88,17 +88,21 @@ https://github.com/wildfly/wildfly-build-tools/blob/master/feature-pack-build-ma
 
 The schema for the config file for the **wildfly-server-provisioning-maven-plugin** can
 be found in the sources here:
-https://github.com/wildfly/wildfly-build-tools/tree/master/provisioning/src/main/ resources
+https://github.com/wildfly/wildfly-build-tools/tree/master/provisioning/src/main/resources
 
 
 ### Example Config Files
 
 Some example configurations can be found in the wildfly-core and wildfly sources:
-https://github.com/wildfly/wildfly-core/blob/master/core-feature-pack/feature-pack-build.xml
-https://github.com/wildfly/wildfly-core/blob/master/dist/server-provisioning.xml
-https://github.com/wildfly/wildfly/blob/master/feature-pack/feature-pack-build.xml
-https://github.com/wildfly/wildfly/blob/master/dist/server-provisioning.xml
+* https://github.com/wildfly/wildfly-core/blob/master/core-feature-pack/feature-pack-build.xml
+* https://github.com/wildfly/wildfly-core/blob/master/dist/server-provisioning.xml
+* https://github.com/wildfly/wildfly/blob/master/feature-pack/feature-pack-build.xml
+* https://github.com/wildfly/wildfly/blob/master/dist/server-provisioning.xml
 
+#### Provisioning configuration attributes
+* *copy-module-artifacts* - whether should be WildFly modules resources (JARs) copied from artifacts into `WILDFLY_HOME/modules`, next to their `module.xml`.
+* *extract-schemas* - whether should be XSD files extracted from WildFly modules artifacts into `WILDFLY_HOME/docs/schema`
+* *extract-schemas-groups* - groupId of artifacts, from which should be XSD files extracted (delimited by space)
 
 #### Example Server Provisioning Filter
 
