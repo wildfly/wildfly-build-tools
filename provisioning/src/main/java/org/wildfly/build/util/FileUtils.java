@@ -23,20 +23,25 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * @author Eduardo Martins
  */
 public class FileUtils {
 
-    public static void extractFile(JarFile jarFile, String jarEntryName, File targetFile) throws IOException {
+    public static void extractFile(ZipFile jarFile, String jarEntryName, File targetFile) throws IOException {
         byte[] data = new byte[1024];
-        ZipEntry entry = jarFile.getEntry(jarEntryName);
+        ZipArchiveEntry entry = jarFile.getEntry(jarEntryName);
+        if (entry.isUnixSymlink()) {
+            Files.createSymbolicLink(targetFile.toPath(), Paths.get(jarFile.getUnixSymlink(entry)));
+            return;
+        }
         if (entry.isDirectory()) { // if its a directory, create it
             targetFile.mkdirs();
             return;
@@ -57,9 +62,9 @@ public class FileUtils {
         try (ZipFile zip = new ZipFile(file)) {
             // schemas are in dir 'schema'
             if (zip.getEntry("schema") != null) {
-                Enumeration<? extends ZipEntry> entries = zip.entries();
+                Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
-                    ZipEntry entry = entries.nextElement();
+                    ZipArchiveEntry entry = entries.nextElement();
                     if (!entry.isDirectory()) {
                         String entryName = entry.getName();
                         if (outputDirectory != null && entryName.startsWith("schema/")) {

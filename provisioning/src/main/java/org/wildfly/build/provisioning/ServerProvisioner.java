@@ -61,10 +61,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarFile;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * Task that builds a server from a set of features packs declared in the pack.
@@ -268,7 +268,7 @@ public class ServerProvisioner {
         // create the module's artifact property replacer
         final BuildPropertyReplacer buildPropertyReplacer = thinServer ? new BuildPropertyReplacer(new ModuleArtifactPropertyResolver(featurePack.getArtifactResolver())) : null;
         // process each module file
-        try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
+        try (ZipFile jar = new ZipFile(featurePack.getFeaturePackFile())) {
             for (FeaturePack.Module module : includedModules) {
                 // process the module file
                 final String jarEntryName = module.getModuleFile();
@@ -439,7 +439,7 @@ public class ServerProvisioner {
         if (configFileOverride == null || configFileOverride.isUseTemplate()) {
             // template file from this config file to be used
             // get the template's file zip entry
-            ZipEntry templateFileZipEntry = zipFile.getEntry(configFile.getTemplate());
+            ZipArchiveEntry templateFileZipEntry = zipFile.getEntry(configFile.getTemplate());
             if (templateFileZipEntry == null) {
                 throw new RuntimeException("Feature pack " + provisioningFeaturePack.getFeaturePack().getFeaturePackFile() + " template file " + configFile.getTemplate() + " not found");
             }
@@ -487,7 +487,7 @@ public class ServerProvisioner {
 
     private void processFeaturePackContents(FeaturePack featurePack, ServerProvisioningDescription.FeaturePack.ContentFilters contentFilters, File outputDirectory, Set<String> filesProcessed, boolean excludeDependencies) throws IOException {
         final int fileNameWithoutContentsStart = Locations.CONTENT.length() + 1;
-        try (JarFile jar = new JarFile(featurePack.getFeaturePackFile())) {
+        try (ZipFile jar = new ZipFile(featurePack.getFeaturePackFile())) {
             for (String contentFile : featurePack.getContentFiles()) {
                 final String outputFile = contentFile.substring(fileNameWithoutContentsStart);
                 boolean include = true;
@@ -560,9 +560,9 @@ public class ServerProvisioner {
 
     private void extractArtifact(File file, File target, CopyArtifact copy) throws IOException {
         try (ZipFile zip = new ZipFile(file)) {
-            Enumeration<? extends ZipEntry> entries = zip.entries();
+            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
             while (entries.hasMoreElements()) {
-                ZipEntry entry = entries.nextElement();
+                ZipArchiveEntry entry = entries.nextElement();
                 if (copy.includeFile(entry.getName())) {
                     if (entry.isDirectory()) {
                         new File(target, copy.relocatedPath(entry.getName())).mkdirs();

@@ -22,14 +22,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
+
 import org.jboss.jandex.Index;
 import org.jboss.jandex.IndexWriter;
 import org.jboss.jandex.Indexer;
 import org.jboss.logging.Logger;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * @author Stuart Douglas
@@ -39,17 +40,17 @@ public class JandexIndexer {
     private static final Logger log = Logger.getLogger(JandexIndexer.class);
 
     public static void createIndex(File jarFile, OutputStream target) throws IOException {
-        ZipOutputStream zo;
+        ZipArchiveOutputStream zo;
 
         Indexer indexer = new Indexer();
 
-        JarFile jar = new JarFile(jarFile);
+        ZipFile jar = new ZipFile(jarFile);
 
-        zo = new ZipOutputStream(target);
+        zo = new ZipArchiveOutputStream(target);
         try {
-            Enumeration<JarEntry> entries = jar.entries();
+            Enumeration<ZipArchiveEntry> entries = jar.getEntries();
             while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
+                ZipArchiveEntry entry = entries.nextElement();
 
                 if (entry.getName().endsWith(".class")) {
                     try {
@@ -66,7 +67,7 @@ public class JandexIndexer {
                 }
             }
 
-            zo.putNextEntry(new ZipEntry("META-INF/jandex.idx"));
+            zo.putArchiveEntry(new ZipArchiveEntry("META-INF/jandex.idx"));
 
             IndexWriter writer = new IndexWriter(zo);
             Index index = indexer.complete();

@@ -26,8 +26,9 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * @author Eduardo Martins
@@ -42,7 +43,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
      * @param zipFile
      * @param zipEntry
      */
-    public void addSubsystemFileSource(String subsystemFileName, File zipFile, ZipEntry zipEntry) {
+    public void addSubsystemFileSource(String subsystemFileName, File zipFile, ZipArchiveEntry zipEntry) {
        inputStreamSourceMap.put(subsystemFileName, new ZipEntryInputStreamSource(zipFile, zipEntry));
     }
 
@@ -67,9 +68,9 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
         try (ZipFile zip = new ZipFile(file)) {
             // extract subsystem template and schema, if present
             if (zip.getEntry("subsystem-templates") != null) {
-                Enumeration<? extends ZipEntry> entries = zip.entries();
+                Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
-                    ZipEntry entry = entries.nextElement();
+                    ZipArchiveEntry entry = entries.nextElement();
                     if (!entry.isDirectory()) {
                         String entryName = entry.getName();
                         if (entryName.startsWith("subsystem-templates/")) {
@@ -91,7 +92,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
     public boolean addSubsystemFileSourceFromZipFile(String subsystem, File file) throws IOException {
         try (ZipFile zip = new ZipFile(file)) {
             String entryName = "subsystem-templates/"+subsystem;
-            ZipEntry entry = zip.getEntry(entryName);
+            ZipArchiveEntry entry = zip.getEntry(entryName);
             if (entry != null) {
                 addSubsystemFileSource(subsystem, file, entry);
                 return true;

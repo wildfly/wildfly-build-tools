@@ -30,9 +30,9 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * Factory class that creates a feature pack from its artifact coordinates.
@@ -68,14 +68,14 @@ public class FeaturePackFactory {
             throw new RuntimeException("Could not resolve artifact file for feature package  " + artifactCoords);
         }
         // process the artifact file
-        try(JarFile jar = new JarFile(artifactFile)) {
+        try(ZipFile jar = new ZipFile(artifactFile)) {
             // create list of files in the artifact file
             final List<String> configurationFiles = new ArrayList<>();
             final List<String> modulesFiles = new ArrayList<>();
             final List<String> contentFiles = new ArrayList<>();
-            final Enumeration<JarEntry> entries = jar.entries();
+            final Enumeration<ZipArchiveEntry> entries = jar.getEntries();
             while (entries.hasMoreElements()) {
-                JarEntry entry = entries.nextElement();
+                ZipArchiveEntry entry = entries.nextElement();
                 final String entryName = entry.getName();
                 if (entryName.startsWith(CONFIGURATION_ENTRY_NAME_PREFIX)) {
                     configurationFiles.add(entryName);
@@ -101,8 +101,8 @@ public class FeaturePackFactory {
         }
     }
 
-    private static FeaturePackDescription createFeaturePackDescription(JarFile jar) throws IOException, XMLStreamException {
-        ZipEntry zipEntry = jar.getEntry(Locations.FEATURE_PACK_DESCRIPTION);
+    private static FeaturePackDescription createFeaturePackDescription(ZipFile jar) throws IOException, XMLStreamException {
+        ZipArchiveEntry zipEntry = jar.getEntry(Locations.FEATURE_PACK_DESCRIPTION);
         if (zipEntry == null) {
             throw new IllegalArgumentException("feature pack description not found");
         }

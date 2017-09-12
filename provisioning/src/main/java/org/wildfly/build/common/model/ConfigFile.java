@@ -26,8 +26,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  *
@@ -74,7 +75,7 @@ public class ConfigFile {
     public Map<String, Map<String, SubsystemConfig>> getSubsystemConfigs(File featurePackFile) throws IOException, XMLStreamException {
         Map<String, Map<String, SubsystemConfig>> subsystems = new HashMap<>();
         try (ZipFile zip = new ZipFile(featurePackFile)) {
-            ZipEntry zipEntry = zip.getEntry(getSubsystems());
+            ZipArchiveEntry zipEntry = zip.getEntry(getSubsystems());
             if (zipEntry == null) {
                 throw new RuntimeException("Feature pack " + featurePackFile + " subsystems file " + getSubsystems() + " not found");
             }

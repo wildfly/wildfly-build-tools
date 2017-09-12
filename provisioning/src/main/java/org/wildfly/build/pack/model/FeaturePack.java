@@ -38,8 +38,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * Represents a Wildfly feature pack. This is used by both the build and provisioning tools,
@@ -113,11 +114,11 @@ public class FeaturePack {
     public synchronized Map<ModuleIdentifier, Module> getFeaturePackModules() {
         if (featurePackModules == null) {
             featurePackModules = new HashMap<>();
-            try (JarFile jar = new JarFile(featurePackFile)) {
+            try (ZipFile jar = new ZipFile(featurePackFile)) {
                 // collect modules from entries named */module.xml
                 for (String moduleFile : modulesFiles) {
                     if (moduleFile.endsWith(MODULE_XML_ENTRY_NAME_SUFIX)) {
-                        ZipEntry entry = jar.getEntry(moduleFile);
+                        ZipArchiveEntry entry = jar.getEntry(moduleFile);
                         // parse the module file
                         ModuleParseResult moduleParseResult = ModuleParser.parse(jar.getInputStream(entry));
                         featurePackModules.put(moduleParseResult.getIdentifier(), new Module(this, moduleFile, moduleParseResult));

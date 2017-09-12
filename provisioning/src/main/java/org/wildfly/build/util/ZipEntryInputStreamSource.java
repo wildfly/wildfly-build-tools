@@ -19,8 +19,9 @@ package org.wildfly.build.util;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
+
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 
 /**
  * @author Eduardo Martins
@@ -28,9 +29,9 @@ import java.util.zip.ZipFile;
 public class ZipEntryInputStreamSource implements InputStreamSource {
 
     private final File file;
-    private final ZipEntry zipEntry;
+    private final ZipArchiveEntry zipEntry;
 
-    public ZipEntryInputStreamSource(File file, ZipEntry zipEntry) {
+    public ZipEntryInputStreamSource(File file, ZipArchiveEntry zipEntry) {
         this.file = file;
         this.zipEntry = zipEntry;
     }
