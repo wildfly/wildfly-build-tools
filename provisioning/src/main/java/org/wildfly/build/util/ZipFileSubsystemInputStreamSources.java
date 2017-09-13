@@ -67,7 +67,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
     public void addAllSubsystemFileSourcesFromZipFile(File file) throws IOException {
         try (ZipFile zip = new ZipFile(file)) {
             // extract subsystem template and schema, if present
-            if (zip.getEntry("subsystem-templates") != null) {
+            if (zip.getEntry("subsystem-templates/") != null) {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();

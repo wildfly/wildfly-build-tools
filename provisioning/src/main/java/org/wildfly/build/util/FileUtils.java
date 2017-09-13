@@ -61,7 +61,7 @@ public class FileUtils {
     public static void extractSchemas(File file, File outputDirectory) throws IOException {
         try (ZipFile zip = new ZipFile(file)) {
             // schemas are in dir 'schema'
-            if (zip.getEntry("schema") != null) {
+            if (zip.getEntry("schema/") != null) {
                 Enumeration<ZipArchiveEntry> entries = zip.getEntries();
                 while (entries.hasMoreElements()) {
                     ZipArchiveEntry entry = entries.nextElement();
