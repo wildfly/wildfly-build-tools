@@ -32,6 +32,7 @@ public class ModuleParseResult {
     final List<ArtifactName> artifacts = new ArrayList<>();
     final Document document;
     ModuleIdentifier identifier;
+    ArtifactName versionArtifactName;
 
     public ModuleParseResult(final Document document) {
         this.document = document;
@@ -55,6 +56,10 @@ public class ModuleParseResult {
 
     public Document getDocument() {
         return document;
+    }
+
+    public ArtifactName getVersionArtifactName() {
+        return versionArtifactName;
     }
 
     public static class ModuleDependency {

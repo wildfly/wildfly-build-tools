@@ -330,6 +330,16 @@ public class ServerProvisioner {
                         throw new RuntimeException("Could not extract resources from " + artifactName, t);
                     }
                 }
+                // update the version, if there is one
+                final ModuleParseResult.ArtifactName versionArtifactName = result.getVersionArtifactName();
+                if (versionArtifactName != null) {
+                    Artifact artifact = featurePack.getArtifactResolver().getArtifact(versionArtifactName.getArtifactCoords());
+                    if (artifact == null) {
+                        throw new RuntimeException("Could not resolve module resource artifact " + versionArtifactName + " for feature pack " + featurePack.getFeaturePackFile());
+                    }
+                    // set the resolved version
+                    versionArtifactName.getAttribute().setValue(artifact.getVersion());
+                }
                 // write updated module xml content
                 final Document document = result.getDocument();
                 try (FileOutputStream out = new FileOutputStream(targetFile)) {

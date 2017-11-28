@@ -63,6 +63,10 @@ public class ModuleParser {
         String name = element.getAttributeValue("name");
         String slot = getOptionalAttributeValue(element, "slot", "main");
         result.identifier = new ModuleIdentifier(name, slot);
+        final Attribute versionAttribute = element.getAttribute("version");
+        if (versionAttribute != null) {
+            result.versionArtifactName = parseOptionalArtifactName(versionAttribute.getValue(), versionAttribute);
+        }
         final Element dependencies = element.getFirstChildElement("dependencies", element.getNamespaceURI());
         if (dependencies != null) parseDependencies(dependencies, result);
         final Element resources = element.getFirstChildElement("resources", element.getNamespaceURI());
@@ -121,6 +125,14 @@ public class ModuleParser {
     }
 
     private static ModuleParseResult.ArtifactName parseArtifactName(String artifactName, final Attribute attribute) {
+        final ModuleParseResult.ArtifactName name = parseOptionalArtifactName(artifactName, attribute);
+        if (name == null) {
+            throw new RuntimeException("Hard coded artifact " + artifactName);
+        }
+        return name;
+    }
+
+    private static ModuleParseResult.ArtifactName parseOptionalArtifactName(String artifactName, final Attribute attribute) {
         if (artifactName.startsWith("${") && artifactName.endsWith("}")) {
             String ct = artifactName.substring(2, artifactName.length() - 1);
             String options = null;
@@ -132,7 +144,7 @@ public class ModuleParser {
             }
             return new ModuleParseResult.ArtifactName(artifactCoords, options, attribute);
         } else {
-            throw new RuntimeException("Hard coded artifact " + artifactName);
+            return null;
         }
     }
 }

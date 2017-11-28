@@ -28,9 +28,11 @@ In order to build a feature pack it is necessary to create three directories in 
 but should instead use references of the form: 
 <artifact name="${org.hibernate:hibernate-core}"/>. These artifact references will 
 be replaces by concrete references to a specific version or a <resource> reference 
-when the server is provisioned. Because the version is not hard coded into the 
-module.xml files this makes it possible to override the version of specific artifacts 
-at provisioning time.
+when the server is provisioned.  This makes it possible to override the version of
+specific artifacts at provisioning time.  In addition, version numbers can be automatically
+added to module descriptors of version 1.6 or later by adding a verion attribute whose
+argument is either a fixed version string or one of the given artifact references.
+The version number will appear on stack traces on Java 9 and later.
 
 **content**: contains files that are copied into the server.
 
