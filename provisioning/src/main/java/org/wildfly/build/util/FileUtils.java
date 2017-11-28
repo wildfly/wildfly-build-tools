@@ -80,6 +80,7 @@ public class FileUtils {
 
     public static void copyFile(final File src, final File dest) throws IOException {
         Files.copy(src.toPath(), dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        POSIXFinePrivilegesHelper.fineTunePrivileges(dest.toPath());
     }
 
     public static String readFile(final File file) {
