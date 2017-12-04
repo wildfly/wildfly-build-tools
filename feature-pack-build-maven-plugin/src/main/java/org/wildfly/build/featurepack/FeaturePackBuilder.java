@@ -16,6 +16,7 @@
 
 package org.wildfly.build.featurepack;
 
+import nu.xom.ParsingException;
 import org.jboss.logging.Logger;
 import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
@@ -154,8 +155,9 @@ public class FeaturePackBuilder {
                             Artifact artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
                             if(artifact == null) {
                                 errors.add("Could not determine version for artifact " + artifactName);
+                            } else {
+                                artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
                             }
-                            artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
                         }
                         for(ModuleParseResult.ModuleDependency dep : result.getDependencies()) {
                             if(!dep.isOptional()) {
@@ -167,7 +169,7 @@ public class FeaturePackBuilder {
                             }
                         }
 
-                    } catch (XMLStreamException e) {
+                    } catch (ParsingException e) {
                         throw new RuntimeException(e);
                     }
 

@@ -16,6 +16,10 @@
 
 package org.wildfly.build.provisioning;
 
+import nu.xom.Attribute;
+import nu.xom.Document;
+import nu.xom.Element;
+import nu.xom.Serializer;
 import org.jboss.logging.Logger;
 import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
@@ -42,7 +46,6 @@ import org.wildfly.build.util.ZipEntryInputStreamSource;
 
 import javax.xml.stream.XMLStreamException;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -62,7 +65,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -278,8 +280,6 @@ public class ServerProvisioner {
                 targetFile.getParentFile().mkdirs();
                 // extract the module file
                 FileUtils.extractFile(jar, jarEntryName, targetFile);
-                // read module xml to string for content update
-                String moduleXmlContents = FileUtils.readFile(targetFile);
                 // parse the module xml
                 ModuleParseResult result = module.getModuleParseResult();
                 // process module artifacts
@@ -289,63 +289,62 @@ public class ServerProvisioner {
                     boolean jandex = false;
                     if (options != null) {
                         jandex = options.contains("jandex"); //todo: eventually we may need options to have a proper query string type syntax
-                        moduleXmlContents = moduleXmlContents.replace(artifactName.toString(), artifactCoords); //todo: all these replace calls are a bit yuck, we may need proper solution if this gets more complex
                     }
                     Artifact artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
                     if (artifact == null) {
                         throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + featurePack.getFeaturePackFile());
                     }
                     try {
-                        // process the module artifact
-                        File artifactFile = artifactFileResolver.getArtifactFile(artifact);
-                        // extract schemas if needed
-                        extractSchema(schemaOutputDirectory, artifact, artifactFile);
-                        if (jandex) {
-                            String baseName = artifactFile.getName().substring(0, artifactFile.getName().lastIndexOf("."));
-                            String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf("."));
-                            File target = new File(targetFile.getParent(), baseName + "-jandex" + extension);
-                            JandexIndexer.createIndex(artifactFile, new FileOutputStream(target));
-                            moduleXmlContents = moduleXmlContents.replaceAll("(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "$1<artifact name=\"\\${" + artifactCoords + "}\" />$1<resource-root path=\"" + target.getName() + "\"/>");
-                            // it's also possible that this is an element with nested content
-                            // this regex involves a good deal of backtracking but it seems to work
-                            moduleXmlContents =
-                                    Pattern.compile(
-                                            "(\\s*)<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
-                                            Pattern.DOTALL
-                                    )
-                                            .matcher(moduleXmlContents)
-                                            .replaceAll(
-                                                    "$1<artifact name=\"\\${" + artifactCoords + "}\">$2</artifact>$1<resource-root path=\"" + target.getName() + "\">$2</resource-root>"
-                                            );
-                        }
-                        if (!thinServer) {
-                            // copy the artifact
-                            String artifactFileName = artifactFile.getName();
-                            FileUtils.copyFile(artifactFile, new File(targetFile.getParent(), artifactFileName));
+                        if (thinServer) {
+                            // replace artifact coords properties with the ones expected by jboss-modules
+                            String orig = artifactName.getAttribute().getValue();
+                            String repl = buildPropertyReplacer.replaceProperties(orig);
+                            if (! repl.equals(orig)) {
+                                artifactName.getAttribute().setValue(repl);
+                            }
+                        } else {
+                            // process the module artifact
+                            File artifactFile = artifactFileResolver.getArtifactFile(artifact);
+                            // extract schemas if needed
+                            extractSchema(schemaOutputDirectory, artifact, artifactFile);
+                            String location;
+                            if (jandex) {
+                                String baseName = artifactFile.getName().substring(0, artifactFile.getName().lastIndexOf("."));
+                                String extension = artifactFile.getName().substring(artifactFile.getName().lastIndexOf("."));
+                                File target = new File(targetFile.getParent(), baseName + "-jandex" + extension);
+                                JandexIndexer.createIndex(artifactFile, new FileOutputStream(target));
+                                location = target.getName();
+                            } else {
+                                location = artifactFile.getName();
+                                // copy the artifact
+                                FileUtils.copyFile(artifactFile, new File(targetFile.getParent(), location));
+                            }
                             // update module xml content
-                            moduleXmlContents = moduleXmlContents.replaceAll("<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*/>", "<resource-root path=\"" + artifactFileName + "\"/>");
-                            // it's also possible that this is an element with nested content
-                            // this regex involves a good deal of backtracking but it seems to work
-                            moduleXmlContents =
-                                    Pattern.compile(
-                                            "<artifact\\s+name=\"\\$\\{" + artifactCoords + "\\}\"\\s*>(.*)</artifact>",
-                                            Pattern.DOTALL
-                                    )
-                                            .matcher(moduleXmlContents)
-                                            .replaceAll(
-                                                    "<resource-root path=\"" + artifactFileName + "\">$1</resource-root>"
-                                            );
+                            final Attribute attribute = artifactName.getAttribute();
+                            final Element artifactNode = (Element) attribute.getParent();
+                            artifactNode.setLocalName("resource-root");
+                            attribute.setLocalName("path");
+                            attribute.setValue(location);
                         }
                     } catch (Throwable t) {
                         throw new RuntimeException("Could not extract resources from " + artifactName, t);
                     }
                 }
-                if (thinServer) {
-                    // replace artifact coords properties with the ones expected by jboss-modules
-                    moduleXmlContents = buildPropertyReplacer.replaceProperties(moduleXmlContents);
+                // update the version, if there is one
+                final ModuleParseResult.ArtifactName versionArtifactName = result.getVersionArtifactName();
+                if (versionArtifactName != null) {
+                    Artifact artifact = featurePack.getArtifactResolver().getArtifact(versionArtifactName.getArtifactCoords());
+                    if (artifact == null) {
+                        throw new RuntimeException("Could not resolve module resource artifact " + versionArtifactName + " for feature pack " + featurePack.getFeaturePackFile());
+                    }
+                    // set the resolved version
+                    versionArtifactName.getAttribute().setValue(artifact.getVersion());
                 }
                 // write updated module xml content
-                FileUtils.copyFile(new ByteArrayInputStream(moduleXmlContents.getBytes("UTF-8")), targetFile);
+                final Document document = result.getDocument();
+                try (FileOutputStream out = new FileOutputStream(targetFile)) {
+                    new Serializer(out).write(document);
+                }
 
                 // extract all other files in the module dir
                 for (String moduleDirFile : module.getModuleDirFiles()) {

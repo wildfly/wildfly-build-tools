@@ -15,191 +15,124 @@
  */
 package org.wildfly.build.util;
 
+import nu.xom.Attribute;
+import nu.xom.Builder;
+import nu.xom.Document;
+import nu.xom.Element;
+import nu.xom.Elements;
+import nu.xom.ParsingException;
 import org.wildfly.build.pack.model.ModuleIdentifier;
 
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamException;
-import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 
-import static javax.xml.stream.XMLStreamConstants.END_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.END_ELEMENT;
-import static javax.xml.stream.XMLStreamConstants.START_DOCUMENT;
-import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
-
 /**
  *
  * @author Thomas.Diesler@jboss.com
  * @author Stuart Douglas
  * @author Eduardo Martins
+ * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @since 06-Sep-2012
  */
 public class ModuleParser {
 
-    public static ModuleParseResult parse(Path inputFile) throws IOException, XMLStreamException {
+    public static ModuleParseResult parse(Path inputFile) throws IOException, ParsingException {
         return parse(new BufferedInputStream(new FileInputStream(inputFile.toFile())));
     }
 
-    public static ModuleParseResult parse(final InputStream in) throws IOException, XMLStreamException {
-        ModuleParseResult result = new ModuleParseResult();
-        try {
-            XMLStreamReader reader = XMLInputFactory.newInstance().createXMLStreamReader(in);
-            reader.require(START_DOCUMENT, null, null);
-            boolean done = false;
-            while (reader.hasNext()) {
-                int type = reader.next();
-                switch (type) {
-                    case START_ELEMENT:
-                        if (!done && reader.getLocalName().equals("module")) {
-                            parseModule(reader, result);
-                            done = true;
-                        }
-                        else if (!done && reader.getLocalName().equals("module-alias")) {
-                            parseModuleAlias(reader, result);
-                            done = true;
-                        }
-                        break;
-                    case END_DOCUMENT:
-                        return result;
-                }
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Error parsing module xml", e);
-        } finally {
-            try {
-                in.close();
-            } catch (Exception ignore) {
-            }
+    public static ModuleParseResult parse(final InputStream in) throws IOException, ParsingException {
+        Builder builder = new Builder(false);
+        final Document document;
+        try (InputStream in1 = in) {
+            document = builder.build(in1);
+        }
+        ModuleParseResult result = new ModuleParseResult(document);
+        final Element rootElement = document.getRootElement();
+        if (rootElement.getLocalName().equals("module-alias")) {
+            parseModuleAlias(rootElement, result);
+        } else if (rootElement.getLocalName().equals("module")) {
+            parseModule(rootElement, result);
         }
         return result;
     }
 
-    private static void parseModule(XMLStreamReader reader, ModuleParseResult result) throws XMLStreamException {
-        final int count = reader.getAttributeCount();
-        String name = null;
-        String slot = "main";
-        for (int i = 0; i < count; i++) {
-            if("name".equals(reader.getAttributeName(i).getLocalPart())) {
-               name = reader.getAttributeValue(i);
-            } else if("slot".equals(reader.getAttributeName(i).getLocalPart())) {
-                slot = reader.getAttributeValue(i);
-            }
-        }
+    private static void parseModule(Element element, ModuleParseResult result) {
+        String name = element.getAttributeValue("name");
+        String slot = getOptionalAttributeValue(element, "slot", "main");
         result.identifier = new ModuleIdentifier(name, slot);
-        while (reader.hasNext()) {
-            int type = reader.next();
-            switch (type) {
-                case START_ELEMENT:
-                    if (reader.getLocalName().equals("dependencies")) {
-                        parseDependencies(reader, result);
-                    }
-                    if (reader.getLocalName().equals("resources")) {
-                        parseResources(reader, result);
-                    }
-                    break;
-                case END_ELEMENT:
-                    if (reader.getLocalName().equals("module")) {
-                        return;
-                    }
-            }
+        final Attribute versionAttribute = element.getAttribute("version");
+        if (versionAttribute != null) {
+            result.versionArtifactName = parseOptionalArtifactName(versionAttribute.getValue(), versionAttribute);
         }
+        final Element dependencies = element.getFirstChildElement("dependencies", element.getNamespaceURI());
+        if (dependencies != null) parseDependencies(dependencies, result);
+        final Element resources = element.getFirstChildElement("resources", element.getNamespaceURI());
+        if (resources != null) parseResources(resources, result);
     }
 
-    private static void parseModuleAlias(XMLStreamReader reader, ModuleParseResult result) throws XMLStreamException {
-        String targetName = "";
-        String targetSlot = "main";
-        String name = null;
-        String slot = "main";
-        boolean optional = false;
-        for (int i = 0 ; i < reader.getAttributeCount() ; i++) {
-            String localName = reader.getAttributeLocalName(i);
-            if (localName.equals("target-name")) {
-                targetName = reader.getAttributeValue(i);
-            } else if (localName.equals("target-slot")) {
-                targetSlot = reader.getAttributeValue(i);
-            } else if (localName.equals("name")) {
-                name = reader.getAttributeValue(i);
-            } else if (localName.equals("slot")) {
-                slot = reader.getAttributeValue(i);
-            }
-        }
+    private static String getOptionalAttributeValue(Element element, String name, String defVal) {
+        final String value = element.getAttributeValue(name);
+        return value == null ? defVal : value;
+    }
+
+    private static void parseModuleAlias(Element element, ModuleParseResult result) {
+        final String targetName = getOptionalAttributeValue(element, "target-name", "");
+        final String targetSlot = getOptionalAttributeValue(element, "target-slot", "main");
+        final String name = element.getAttributeValue("name");
+        final String slot = getOptionalAttributeValue(element, "slot", "main");
         ModuleIdentifier moduleId = new ModuleIdentifier(targetName, targetSlot);
         result.identifier = new ModuleIdentifier(name, slot);
-        result.dependencies.add(new ModuleParseResult.ModuleDependency(moduleId, optional));
+        result.dependencies.add(new ModuleParseResult.ModuleDependency(moduleId, false));
     }
 
-    private static void parseDependencies(XMLStreamReader reader, ModuleParseResult result) throws XMLStreamException {
-        while (reader.hasNext()) {
-            int type = reader.next();
-            switch (type) {
-                case START_ELEMENT:
-                    if (reader.getLocalName().equals("module")) {
-                        String name = "";
-                        String slot = "main";
-                        boolean optional = false;
-                        for (int i = 0 ; i < reader.getAttributeCount() ; i++) {
-                            String localName = reader.getAttributeLocalName(i);
-                            if (localName.equals("name")) {
-                                name = reader.getAttributeValue(i);
-                            } else if (localName.equals("slot")) {
-                                slot = reader.getAttributeValue(i);
-                            } else if (localName.equals("optional")) {
-                                optional = Boolean.parseBoolean(reader.getAttributeValue(i));
-                            }
-                        }
-                        ModuleIdentifier moduleId = new ModuleIdentifier(name, slot);
-                        result.dependencies.add(new ModuleParseResult.ModuleDependency(moduleId, optional));
-                    }
+    private static void parseDependencies(Element element, ModuleParseResult result) {
+        final Elements modules = element.getChildElements("module", element.getNamespaceURI());
+        final int size = modules.size();
+        for (int i = 0; i < size; i ++) {
+            final Element moduleElement = modules.get(i);
+            String name = getOptionalAttributeValue(moduleElement, "name", "");
+            String slot = getOptionalAttributeValue(moduleElement, "slot", "main");
+            boolean optional = Boolean.parseBoolean(getOptionalAttributeValue(moduleElement, "optional", "false"));
+            ModuleIdentifier moduleId = new ModuleIdentifier(name, slot);
+            result.dependencies.add(new ModuleParseResult.ModuleDependency(moduleId, optional));
+        }
+    }
+
+    private static void parseResources(Element element, ModuleParseResult result) {
+        final Elements children = element.getChildElements();
+        final int size = children.size();
+        for (int i = 0; i < size; i ++) {
+            final Element child = children.get(i);
+            switch (child.getLocalName()) {
+                case "resource-root": {
+                    String path = child.getAttributeValue("path");
+                    if (path != null) result.resourceRoots.add(path);
                     break;
-                case END_ELEMENT:
-                    if (reader.getLocalName().equals("dependencies")) {
-                        return;
+                }
+                case "artifact": {
+                    final Attribute attribute = child.getAttribute("name");
+                    if (attribute != null) {
+                        final String nameStr = attribute.getValue();
+                        result.artifacts.add(parseArtifactName(nameStr, attribute));
+                        break;
                     }
+                }
             }
         }
     }
 
-    private static void parseResources(XMLStreamReader reader, ModuleParseResult result) throws XMLStreamException {
-        while (reader.hasNext()) {
-            int type = reader.next();
-            switch (type) {
-                case START_ELEMENT:
-                    if (reader.getLocalName().equals("resource-root")) {
-                        String path = "";
-                        for (int i = 0 ; i < reader.getAttributeCount() ; i++) {
-                            String localName = reader.getAttributeLocalName(i);
-                            if (localName.equals("path")) {
-                                path = reader.getAttributeValue(i);
-                            }
-                        }
-                        result.resourceRoots.add(path);
-                    } else if (reader.getLocalName().equals("artifact")) {
-                        ModuleParseResult.ArtifactName name = null;
-                        for (int i = 0 ; i < reader.getAttributeCount() ; i++) {
-                            String localName = reader.getAttributeLocalName(i);
-                            if (localName.equals("name")) {
-                                name = parseArtifactName(reader.getAttributeValue(i));
-                            }
-                        }
-                        if (name == null) {
-                            name = new ModuleParseResult.ArtifactName("", null);
-                        }
-                        result.artifacts.add(name);
-                    }
-                    break;
-                case END_ELEMENT:
-                    if (reader.getLocalName().equals("resources")) {
-                        return;
-                    }
-            }
+    private static ModuleParseResult.ArtifactName parseArtifactName(String artifactName, final Attribute attribute) {
+        final ModuleParseResult.ArtifactName name = parseOptionalArtifactName(artifactName, attribute);
+        if (name == null) {
+            throw new RuntimeException("Hard coded artifact " + artifactName);
         }
+        return name;
     }
 
-    private static ModuleParseResult.ArtifactName parseArtifactName(String artifactName) {
+    private static ModuleParseResult.ArtifactName parseOptionalArtifactName(String artifactName, final Attribute attribute) {
         if (artifactName.startsWith("${") && artifactName.endsWith("}")) {
             String ct = artifactName.substring(2, artifactName.length() - 1);
             String options = null;
@@ -209,9 +142,9 @@ public class ModuleParser {
                 options = split[1];
                 artifactCoords = split[0];
             }
-            return new ModuleParseResult.ArtifactName(artifactCoords, options);
+            return new ModuleParseResult.ArtifactName(artifactCoords, options, attribute);
         } else {
-            throw new RuntimeException("Hard coded artifact " + artifactName);
+            return null;
         }
     }
 }

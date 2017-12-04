@@ -18,6 +18,9 @@ package org.wildfly.build.util;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import nu.xom.Attribute;
+import nu.xom.Document;
 import org.wildfly.build.pack.model.ModuleIdentifier;
 
 /**
@@ -27,7 +30,13 @@ public class ModuleParseResult {
     final List<ModuleDependency> dependencies = new ArrayList<ModuleDependency>();
     final List<String> resourceRoots = new ArrayList<>();
     final List<ArtifactName> artifacts = new ArrayList<>();
+    final Document document;
     ModuleIdentifier identifier;
+    ArtifactName versionArtifactName;
+
+    public ModuleParseResult(final Document document) {
+        this.document = document;
+    }
 
     public List<ModuleDependency> getDependencies() {
         return dependencies;
@@ -43,6 +52,14 @@ public class ModuleParseResult {
 
     public ModuleIdentifier getIdentifier() {
         return identifier;
+    }
+
+    public Document getDocument() {
+        return document;
+    }
+
+    public ArtifactName getVersionArtifactName() {
+        return versionArtifactName;
     }
 
     public static class ModuleDependency {
@@ -72,10 +89,12 @@ public class ModuleParseResult {
 
         private final String artifactCoords;
         private final String options;
+        private final Attribute attribute;
 
-        public ArtifactName(String artifactCoords, String options) {
+        public ArtifactName(String artifactCoords, String options, final Attribute attribute) {
             this.artifactCoords = artifactCoords;
             this.options = options;
+            this.attribute = attribute;
         }
 
         public String getArtifactCoords() {
@@ -84,6 +103,10 @@ public class ModuleParseResult {
 
         public String getOptions() {
             return options;
+        }
+
+        public Attribute getAttribute() {
+            return attribute;
         }
 
         @Override
