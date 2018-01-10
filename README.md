@@ -26,11 +26,11 @@ In order to build a feature pack it is necessary to create three directories in 
 
 **modules**: contains module.xml files. These files should not use <resource> references, 
 but should instead use references of the form: 
-<artifact name="${org.hibernate:hibernate-core}"/>. These artifact references will 
-be replaces by concrete references to a specific version or a <resource> reference 
+`<artifact name="${org.hibernate:hibernate-core}"/>`.These artifact references will
+be replaced by concrete references to a specific version or a <resource> reference
 when the server is provisioned.  This makes it possible to override the version of
 specific artifacts at provisioning time.  In addition, version numbers can be automatically
-added to module descriptors of version 1.6 or later by adding a verion attribute whose
+added to module descriptors of version 1.6 or later by adding a version attribute whose
 argument is either a fixed version string or one of the given artifact references.
 The version number will appear on stack traces on Java 9 and later.
 
@@ -88,7 +88,9 @@ The plugins are configured in the "plugins" section of the pom.
 ### Config Parameters
 
 Most of the configuration for each plugin is contained in a separate configuration
-file defined by the parameter *config-file*.  The schema for the config file for the **wildfly-feature-pack-build-maven-plugin** can be found in the sources here:
+file defined by the parameter *config-file*.
+
+The schema for the config file for the **wildfly-feature-pack-build-maven-plugin** can be found in the sources here:
 https://github.com/wildfly/wildfly-build-tools/blob/master/feature-pack-build-maven-plugin/src/main/resources/
 
 The schema for the config file for the **wildfly-server-provisioning-maven-plugin** can
