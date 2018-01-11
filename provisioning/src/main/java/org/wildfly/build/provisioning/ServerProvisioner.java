@@ -302,6 +302,9 @@ public class ServerProvisioner {
                             if (! repl.equals(orig)) {
                                 artifactName.getAttribute().setValue(repl);
                             }
+                            File artifactFile = artifactFileResolver.getArtifactFile(artifact);
+                            // extract schemas if needed
+                            extractSchema(schemaOutputDirectory, artifact, artifactFile);
                         } else {
                             // process the module artifact
                             File artifactFile = artifactFileResolver.getArtifactFile(artifact);
