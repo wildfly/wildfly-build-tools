@@ -298,6 +298,9 @@ public class ServerProvisioner {
                         if (thinServer) {
                             // replace artifact coords properties with the ones expected by jboss-modules
                             String orig = artifactName.getAttribute().getValue();
+                            if(orig.contains("?")) {
+                                orig = orig.substring(0, orig.indexOf("?")) + "}";
+                            }
                             String repl = buildPropertyReplacer.replaceProperties(orig);
                             if (! repl.equals(orig)) {
                                 artifactName.getAttribute().setValue(repl);
