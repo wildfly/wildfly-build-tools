@@ -247,7 +247,12 @@ public class ServerProvisioner {
                 for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
                     String artifactCoords = artifactName.getArtifactCoords();
                     String options = artifactName.getOptions();
-                    Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactCoords);
+                    Artifact artifact;
+                    if(artifactName.hasVersion()) {
+                        artifact = artifactName.getArtifact();
+                    } else {
+                        artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactCoords);
+                    }
                     if (artifact == null) {
                         throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
                     }
@@ -290,7 +295,12 @@ public class ServerProvisioner {
                     if (options != null) {
                         jandex = options.contains("jandex"); //todo: eventually we may need options to have a proper query string type syntax
                     }
-                    Artifact artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
+                    Artifact artifact;
+                    if(artifactName.hasVersion()) {
+                        artifact = artifactName.getArtifact();
+                    } else {
+                        artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
+                    }
                     if (artifact == null) {
                         throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + featurePack.getFeaturePackFile());
                     }

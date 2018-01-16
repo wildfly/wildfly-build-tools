@@ -152,7 +152,13 @@ public class FeaturePackBuilder {
                         ModuleParseResult result = ModuleParser.parse(file);
                         knownModules.add(result.getIdentifier());
                         for (ModuleParseResult.ArtifactName artifactName : result.getArtifacts()) {
-                            Artifact artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
+
+                            Artifact artifact;
+                            if(artifactName.hasVersion()) {
+                                artifact = artifactName.getArtifact();
+                            } else {
+                                artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
+                            }
                             if(artifact == null) {
                                 errors.add("Could not determine version for artifact " + artifactName);
                             } else {

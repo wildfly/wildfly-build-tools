@@ -127,7 +127,7 @@ public class ModuleParser {
     private static ModuleParseResult.ArtifactName parseArtifactName(String artifactName, final Attribute attribute) {
         final ModuleParseResult.ArtifactName name = parseOptionalArtifactName(artifactName, attribute);
         if (name == null) {
-            throw new RuntimeException("Hard coded artifact " + artifactName);
+            return new ModuleParseResult.ArtifactName(artifactName, null, attribute);
         }
         return name;
     }

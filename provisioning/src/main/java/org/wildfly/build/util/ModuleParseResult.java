@@ -21,6 +21,8 @@ import java.util.List;
 
 import nu.xom.Attribute;
 import nu.xom.Document;
+
+import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.pack.model.ModuleIdentifier;
 
 /**
@@ -116,6 +118,29 @@ public class ModuleParseResult {
                 sb.append('?').append(options);
             }
             return sb.toString();
+        }
+
+        public boolean hasVersion() {
+            String[] parts = artifactCoords.split(":");
+            if(parts.length > 2) {
+                String version = parts[2];
+                if(version != null && !version.isEmpty()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Artifact getArtifact() {
+            if(!hasVersion()) {
+                throw new IllegalStateException("can only be called when version is hard coded");
+            }
+            String[] parts = getArtifactCoords().split(":");
+            if(parts.length == 3) {
+                return new Artifact(parts[0], parts[1], null, "jar", parts[2]);
+            } else {
+                return new Artifact(parts[0], parts[1], parts[3], "jar", parts[2]);
+            }
         }
     }
 }
