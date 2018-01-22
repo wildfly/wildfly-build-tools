@@ -153,7 +153,7 @@ public class CopyArtifactsModelParser10 {
     }
 
     private void parseCopyArtifact(XMLStreamReader reader, final List<CopyArtifact> result) throws XMLStreamException {
-        String artifact = null;
+        CopyArtifact.ArtifactName artifact = null;
         String toLocation = null;
         String fromLocation = null;
         boolean extract = false;
@@ -164,7 +164,7 @@ public class CopyArtifactsModelParser10 {
             required.remove(attribute);
             switch (attribute) {
                 case ARTIFACT:
-                    artifact = propertyReplacer.replaceProperties(reader.getAttributeValue(i));
+                    artifact = new CopyArtifact.ArtifactName(propertyReplacer.replaceProperties(reader.getAttributeValue(i)));
                     break;
                 case TO_LOCATION:
                     toLocation = propertyReplacer.replaceProperties(reader.getAttributeValue(i));

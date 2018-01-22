@@ -18,6 +18,8 @@ package org.wildfly.build.common.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.wildfly.build.pack.model.Artifact;
+
 /**
  * Represents an artifact that is copies into a specific location in the final
  * build.
@@ -27,14 +29,14 @@ import java.util.List;
  */
 public class CopyArtifact {
 
-    private final String artifact;
+    private final CopyArtifact.ArtifactName artifact;
     private final String toLocation;
     private final boolean extract;
     private final String fromLocation;
     private final List<FileFilter> filters = new ArrayList<>();
 
 
-    public CopyArtifact(String artifact, String toLocation, boolean extract, String fromLocation) {
+    public CopyArtifact(ArtifactName artifact, String toLocation, boolean extract, String fromLocation) {
         this.artifact = artifact;
         this.toLocation = toLocation;
         this.extract = extract || fromLocation != null;
@@ -46,7 +48,7 @@ public class CopyArtifact {
         this.fromLocation = fromLocation;
     }
 
-    public String getArtifact() {
+    public ArtifactName getArtifact() {
         return artifact;
     }
 
@@ -83,4 +85,44 @@ public class CopyArtifact {
         return null;
     }
 
+    public static class ArtifactName {
+
+        private final String artifactCoords;
+
+        public ArtifactName(String artifactCoords) {
+            this.artifactCoords = artifactCoords;
+        }
+
+        public String getArtifactCoords() {
+            return artifactCoords;
+        }
+
+        @Override
+        public String toString() {
+            return artifactCoords;
+        }
+
+        public boolean hasVersion() {
+            String[] parts = artifactCoords.split(":");
+            if(parts.length > 2) {
+                String version = parts[2];
+                if(version != null && !version.isEmpty()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public Artifact getArtifact() {
+            if(!hasVersion()) {
+                throw new IllegalStateException("can only be called when version is hard coded");
+            }
+            String[] parts = getArtifactCoords().split(":");
+            if(parts.length == 3) {
+                return new Artifact(parts[0], parts[1], null, "jar", parts[2]);
+            } else {
+                return new Artifact(parts[0], parts[1], parts[3], "jar", parts[2]);
+            }
+        }
+    }
 }

@@ -195,11 +195,18 @@ public class FeaturePackBuilder {
     private static void processVersions(FeaturePackDescription featurePackDescription, ArtifactResolver artifactResolver, Map<Artifact.GACE, String> artifactVersionMap) {
         // resolve copy-artifact versions and add to map
         for (CopyArtifact copyArtifact : featurePackDescription.getCopyArtifacts()) {
-            final Artifact artifact = artifactResolver.getArtifact(copyArtifact.getArtifact());
-            if(artifact == null) {
-                throw new RuntimeException("Could not resolve artifact for copy artifact " + copyArtifact.getArtifact());
+            CopyArtifact.ArtifactName artifactName = copyArtifact.getArtifact();
+
+            final Artifact artifact;
+            if (artifactName.hasVersion()) {
+                artifact = artifactName.getArtifact();
+            } else {
+                artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
+                if(artifact == null) {
+                    throw new RuntimeException("Could not resolve artifact for copy artifact " + copyArtifact.getArtifact());
+                }
+                artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
             }
-            artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
         }
         // fill feature pack description versions
         for (Map.Entry<Artifact.GACE, String> mapEntry : artifactVersionMap.entrySet()) {

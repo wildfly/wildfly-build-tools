@@ -173,7 +173,14 @@ public class ServerProvisioner {
         for (CopyArtifact copyArtifact : copyArtifacts) {
 
             //first resolve the artifact
-            Artifact artifact = artifactResolver.getArtifact(copyArtifact.getArtifact());
+            CopyArtifact.ArtifactName artifactName = copyArtifact.getArtifact();
+
+            Artifact artifact;
+            if (artifactName.hasVersion()) {
+                artifact = artifactName.getArtifact();
+            } else {
+                artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
+            }
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve artifact " + copyArtifact.getArtifact() + " to copy");
             }
