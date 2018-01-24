@@ -22,6 +22,7 @@ import org.wildfly.build.common.model.ConfigFile;
 import org.wildfly.build.configassembly.SubsystemConfig;
 import org.wildfly.build.util.ModuleParseResult;
 import org.wildfly.build.util.ModuleParser;
+import org.wildfly.build.util.PropertyResolver;
 import org.wildfly.build.util.ZipFileSubsystemInputStreamSources;
 
 import javax.xml.stream.XMLStreamException;
@@ -59,9 +60,10 @@ public class FeaturePack {
     private final SortedSet<String> modulesFiles;
     private final List<String> contentFiles;
     private final List<FeaturePack> dependencies;
+    private final ModuleParser moduleParser;
     private final ArtifactResolver artifactResolver;
 
-    public FeaturePack(File featurePackFile, Artifact featurePackArtifact, FeaturePackDescription description, List<FeaturePack> dependencies, ArtifactResolver artifactResolver, List<String> configurationFiles, List<String> modulesFiles, List<String> contentFiles) {
+    public FeaturePack(File featurePackFile, Artifact featurePackArtifact, FeaturePackDescription description, List<FeaturePack> dependencies, PropertyResolver propertyResolver, ArtifactResolver artifactResolver, List<String> configurationFiles, List<String> modulesFiles, List<String> contentFiles) {
         this.featurePackFile = featurePackFile;
         this.featurePackArtifact = featurePackArtifact;
         this.description = description;
@@ -70,6 +72,7 @@ public class FeaturePack {
         this.configurationFiles = Collections.unmodifiableList(configurationFiles);
         this.modulesFiles = Collections.unmodifiableSortedSet(new TreeSet<String>(modulesFiles));
         this.contentFiles = Collections.unmodifiableList(contentFiles);
+        this.moduleParser = new ModuleParser(propertyResolver);
     }
 
     public FeaturePackDescription getDescription() {
@@ -119,7 +122,7 @@ public class FeaturePack {
                     if (moduleFile.endsWith(MODULE_XML_ENTRY_NAME_SUFIX)) {
                         ZipEntry entry = jar.getEntry(moduleFile);
                         // parse the module file
-                        ModuleParseResult moduleParseResult = ModuleParser.parse(jar.getInputStream(entry));
+                        ModuleParseResult moduleParseResult = moduleParser.parse(jar.getInputStream(entry));
                         featurePackModules.put(moduleParseResult.getIdentifier(), new Module(this, moduleFile, moduleParseResult));
                     }
                 }

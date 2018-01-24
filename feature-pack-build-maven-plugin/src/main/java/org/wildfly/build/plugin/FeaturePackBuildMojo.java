@@ -35,6 +35,7 @@ import org.wildfly.build.featurepack.model.FeaturePackBuild;
 import org.wildfly.build.featurepack.model.FeaturePackBuildModelParser;
 import org.wildfly.build.util.FileUtils;
 import org.wildfly.build.util.MapPropertyResolver;
+import org.wildfly.build.util.PropertyResolver;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -131,9 +132,11 @@ public class FeaturePackBuildMojo extends AbstractMojo {
             properties.putAll(project.getProperties());
             properties.putAll(System.getProperties());
             properties.put("project.version", project.getVersion()); //TODO: figure out the correct way to do this
-            final FeaturePackBuild build = new FeaturePackBuildModelParser(new MapPropertyResolver(properties)).parse(configStream);
+            PropertyResolver propertyResolver = new MapPropertyResolver(properties);
+
+            final FeaturePackBuild build = new FeaturePackBuildModelParser(propertyResolver).parse(configStream);
             File target = new File(buildName, serverName);
-            FeaturePackBuilder.build(build, target, new MavenProjectArtifactResolver(project), new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos));
+            FeaturePackBuilder.build(build, target, propertyResolver, new MavenProjectArtifactResolver(project), new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -25,6 +25,7 @@ import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionModelParser;
 import org.wildfly.build.util.MapPropertyResolver;
 import org.wildfly.build.util.PropertiesBasedArtifactResolver;
+import org.wildfly.build.util.PropertyResolver;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,6 +46,8 @@ public class ProvisionCommand {
         //TODO: better target selection, also make sure provisioning file is copied
         // environment is the sys properties
         final Properties environment = System.getProperties();
+        final PropertyResolver propertyResolver = new MapPropertyResolver(environment);
+
         // setup build dir
         final File buildDir = new File("target");
         buildDir.mkdirs();
@@ -53,7 +56,7 @@ public class ProvisionCommand {
         final AetherArtifactFileResolver aetherArtifactFileResolver = new StandaloneAetherArtifactFileResolver(mavenLocalRepositoryBaseDir.exists() ? mavenLocalRepositoryBaseDir : (new File(buildDir, "repository")));
         try (FileInputStream configStream = new FileInputStream(configFile)) {
             // parse description
-            final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(environment)).parse(configStream);
+            final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(propertyResolver).parse(configStream);
             // create version override artifact resolver
             ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
             if(Boolean.valueOf(environment.getProperty("system-property-version-overrides", "false"))) {
@@ -61,7 +64,7 @@ public class ProvisionCommand {
             }
             // provision the server
             final File outputDir = new File(buildDir, "wildfly");
-            ServerProvisioner.build(serverProvisioningDescription, outputDir, false, aetherArtifactFileResolver, overrideArtifactResolver);
+            ServerProvisioner.build(serverProvisioningDescription, outputDir, false, propertyResolver, aetherArtifactFileResolver, overrideArtifactResolver);
             System.out.print("Server provisioning at "+outputDir+" complete.");
         } catch (Exception e) {
             throw new RuntimeException(e);

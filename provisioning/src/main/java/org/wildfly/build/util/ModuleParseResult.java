@@ -30,7 +30,7 @@ import org.wildfly.build.pack.model.ModuleIdentifier;
  */
 public class ModuleParseResult {
     final List<ModuleDependency> dependencies = new ArrayList<ModuleDependency>();
-    final List<String> resourceRoots = new ArrayList<>();
+    final List<ResourceRoot> resourceRoots = new ArrayList<>();
     final List<ArtifactName> artifacts = new ArrayList<>();
     final Document document;
     ModuleIdentifier identifier;
@@ -44,7 +44,7 @@ public class ModuleParseResult {
         return dependencies;
     }
 
-    public List<String> getResourceRoots() {
+    public List<ResourceRoot> getResourceRoots() {
         return resourceRoots;
     }
 
@@ -141,6 +141,30 @@ public class ModuleParseResult {
             } else {
                 return new Artifact(parts[0], parts[1], parts[3], "jar", parts[2]);
             }
+        }
+    }
+
+    public static class ResourceRoot {
+
+        private final String path;
+        private final Attribute attribute;
+
+        public ResourceRoot(String path, final Attribute attribute) {
+            this.path = path;
+            this.attribute = attribute;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public Attribute getAttribute() {
+            return attribute;
+        }
+
+        @Override
+        public String toString() {
+            return path;
         }
     }
 }
