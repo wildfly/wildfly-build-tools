@@ -20,13 +20,13 @@ File provisionedServerDir = new File(basedir, "dist/target/it-type-classifier-di
 assert provisionedServerDir.exists()
 
 assert new File(provisionedServerDir, "copied-artifacts/base-1.jar").exists()
-//assert new File(provisionedServerDir, "copied-artifacts/base-2.jar").exists()
-//assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-jar-1.0-SNAPSHOT.jar").exists()
-//assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-jar-explicitly-typed.jar").exists()
-//assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-jar-explicitly-typed-myclassifier.jar").exists()
+assert new File(provisionedServerDir, "copied-artifacts/base-2.jar").exists()
+assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-jar-1.0-SNAPSHOT.jar").exists()
+assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-jar-explicitly-typed.jar").exists()
+assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-jar-explicitly-typed-myclassifier.jar").exists()
 assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-jar-myclassifier.jar").exists()
-//assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-war-1.0-SNAPSHOT.war").exists()
-//assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-war-myclassifier.war").exists()
+assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-war-1.0-SNAPSHOT.war").exists()
+assert new File(provisionedServerDir, "copied-artifacts/it-type-classifier-war-myclassifier.war").exists()
 
 
 
