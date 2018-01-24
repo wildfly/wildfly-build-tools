@@ -42,6 +42,8 @@ import org.wildfly.build.util.BuildPropertyReplacer;
 import org.wildfly.build.util.FileUtils;
 import org.wildfly.build.util.ModuleArtifactPropertyResolver;
 import org.wildfly.build.util.ModuleParseResult;
+import org.wildfly.build.util.ModuleParseResult.ResourceRoot;
+import org.wildfly.build.util.PropertyResolver;
 import org.wildfly.build.util.ZipEntryInputStreamSource;
 
 import javax.xml.stream.XMLStreamException;
@@ -85,16 +87,19 @@ public class ServerProvisioner {
 
     private final File outputDirectory;
 
+    private final PropertyResolver propertyResolver;
+
     private final ArtifactFileResolver artifactFileResolver;
 
     private final ArtifactResolver versionOverrideArtifactResolver;
 
     private final boolean overlay;
 
-    public ServerProvisioner(ServerProvisioningDescription description, File outputDirectory, boolean overlay, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+    public ServerProvisioner(ServerProvisioningDescription description, File outputDirectory, boolean overlay, PropertyResolver propertyResolver, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
         this.description = description;
         this.outputDirectory = outputDirectory;
         this.overlay = overlay;
+        this.propertyResolver = propertyResolver;
         this.artifactFileResolver = artifactFileResolver;
         this.versionOverrideArtifactResolver = versionOverrideArtifactResolver;
     }
@@ -105,7 +110,7 @@ public class ServerProvisioner {
         try {
             // create the feature packs
             for (ServerProvisioningDescription.FeaturePack serverProvisioningFeaturePackDescription : description.getFeaturePacks()) {
-                final FeaturePack featurePack = FeaturePackFactory.createPack(serverProvisioningFeaturePackDescription.getArtifact(), artifactFileResolver, versionOverrideArtifactResolver);
+                final FeaturePack featurePack = FeaturePackFactory.createPack(serverProvisioningFeaturePackDescription.getArtifact(), propertyResolver, artifactFileResolver, versionOverrideArtifactResolver);
                 serverProvisioning.getFeaturePacks().add(new ServerProvisioningFeaturePack(serverProvisioningFeaturePackDescription, featurePack, artifactFileResolver));
             }
             // create output dir
@@ -163,8 +168,8 @@ public class ServerProvisioner {
         serverProvisioning.getConfig().getInputStreamSources().addAllSubsystemFileSourcesFromZipFile(artifactFile);
     }
 
-    public static void build(ServerProvisioningDescription description, File outputDirectory, boolean overlay, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
-        ServerProvisioner provisioner = new ServerProvisioner(description, outputDirectory, overlay, artifactFileResolver, versionOverrideArtifactResolver);
+    public static void build(ServerProvisioningDescription description, File outputDirectory, boolean overlay, PropertyResolver propertyResolver, ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideArtifactResolver) {
+        ServerProvisioner provisioner = new ServerProvisioner(description, outputDirectory, overlay, propertyResolver, artifactFileResolver, versionOverrideArtifactResolver);
         provisioner.build();
     }
 
@@ -351,6 +356,12 @@ public class ServerProvisioner {
                         }
                     } catch (Throwable t) {
                         throw new RuntimeException("Could not extract resources from " + artifactName, t);
+                    }
+                }
+                // update the resource-root paths if a property has been replaced
+                for (ResourceRoot resourceRoot : result.getResourceRoots()) {
+                    if (!resourceRoot.getAttribute().getValue().equals(resourceRoot.getPath())) {
+                        resourceRoot.getAttribute().setValue(resourceRoot.getPath());
                     }
                 }
                 // update the version, if there is one

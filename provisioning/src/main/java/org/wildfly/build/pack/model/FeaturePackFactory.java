@@ -46,18 +46,19 @@ public class FeaturePackFactory {
     private static final String MODULES_ENTRY_NAME_PREFIX = Locations.MODULES + "/";
     private static final String CONTENT_ENTRY_NAME_PREFIX = Locations.CONTENT + "/";
 
-    public static FeaturePack createPack(final Artifact artifactCoords, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver) {
-        return createPack(artifactCoords, artifactFileResolver, versionOverrideResolver, new HashSet<Artifact>());
+    public static FeaturePack createPack(final Artifact artifactCoords, final PropertyResolver propertyResolver, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver) {
+        return createPack(artifactCoords, propertyResolver, artifactFileResolver, versionOverrideResolver, new HashSet<Artifact>());
     }
 
     /**
      *
      * @param artifactCoords the coordinates of the feature pack artifact
+     * @param propertyResolver the Maven properties resolver
      * @param artifactFileResolver the artifact -> artifact file resolver
      * @param processedFeaturePacks a set containing all parent feature packs, useful to detect cyclic dependencies
      * @return
      */
-    private static FeaturePack createPack(final Artifact artifactCoords, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver, Set<Artifact> processedFeaturePacks) {
+    private static FeaturePack createPack(final Artifact artifactCoords, final PropertyResolver propertyResolver, final ArtifactFileResolver artifactFileResolver, ArtifactResolver versionOverrideResolver, Set<Artifact> processedFeaturePacks) {
         if (!processedFeaturePacks.add(artifactCoords)) {
             throw new IllegalStateException("Cyclic dependency, feature pack "+artifactCoords+" already processed! Feature packs: "+processedFeaturePacks);
         }
@@ -93,9 +94,9 @@ public class FeaturePackFactory {
             // create dependencies feature packs
             final List<FeaturePack> dependencies = new ArrayList<>();
             for (String dependency : description.getDependencies()) {
-                dependencies.add(createPack(artifactResolver.getArtifact(dependency), artifactFileResolver, versionOverrideResolver, new HashSet<>(processedFeaturePacks)));
+                dependencies.add(createPack(artifactResolver.getArtifact(dependency), propertyResolver, artifactFileResolver, versionOverrideResolver, new HashSet<>(processedFeaturePacks)));
             }
-            return new FeaturePack(artifactFile, artifactCoords, description, dependencies, artifactResolver, configurationFiles, modulesFiles, contentFiles);
+            return new FeaturePack(artifactFile, artifactCoords, description, dependencies, propertyResolver, artifactResolver, configurationFiles, modulesFiles, contentFiles);
         } catch (Throwable e) {
             throw new RuntimeException("Failed to create feature pack from " + artifactCoords, e);
         }

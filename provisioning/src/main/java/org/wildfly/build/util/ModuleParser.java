@@ -15,19 +15,21 @@
  */
 package org.wildfly.build.util;
 
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Path;
+
+import org.wildfly.build.pack.model.ModuleIdentifier;
+import org.wildfly.build.util.ModuleParseResult.ResourceRoot;
+
 import nu.xom.Attribute;
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Elements;
 import nu.xom.ParsingException;
-import org.wildfly.build.pack.model.ModuleIdentifier;
-
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
 
 /**
  *
@@ -39,11 +41,18 @@ import java.nio.file.Path;
  */
 public class ModuleParser {
 
-    public static ModuleParseResult parse(Path inputFile) throws IOException, ParsingException {
+    private final BuildPropertyReplacer propertyReplacer;
+
+    public ModuleParser(PropertyResolver propertyResolver) {
+        this.propertyReplacer = new BuildPropertyReplacer(propertyResolver);
+    }
+
+    public ModuleParseResult parse(Path inputFile)
+            throws IOException, ParsingException {
         return parse(new BufferedInputStream(new FileInputStream(inputFile.toFile())));
     }
 
-    public static ModuleParseResult parse(final InputStream in) throws IOException, ParsingException {
+    public ModuleParseResult parse(final InputStream in) throws IOException, ParsingException {
         Builder builder = new Builder(false);
         final Document document;
         try (InputStream in1 = in) {
@@ -59,7 +68,7 @@ public class ModuleParser {
         return result;
     }
 
-    private static void parseModule(Element element, ModuleParseResult result) {
+    private void parseModule(Element element, ModuleParseResult result) {
         String name = element.getAttributeValue("name");
         String slot = getOptionalAttributeValue(element, "slot", "main");
         result.identifier = new ModuleIdentifier(name, slot);
@@ -73,12 +82,12 @@ public class ModuleParser {
         if (resources != null) parseResources(resources, result);
     }
 
-    private static String getOptionalAttributeValue(Element element, String name, String defVal) {
+    private String getOptionalAttributeValue(Element element, String name, String defVal) {
         final String value = element.getAttributeValue(name);
         return value == null ? defVal : value;
     }
 
-    private static void parseModuleAlias(Element element, ModuleParseResult result) {
+    private void parseModuleAlias(Element element, ModuleParseResult result) {
         final String targetName = getOptionalAttributeValue(element, "target-name", "");
         final String targetSlot = getOptionalAttributeValue(element, "target-slot", "main");
         final String name = element.getAttributeValue("name");
@@ -88,7 +97,7 @@ public class ModuleParser {
         result.dependencies.add(new ModuleParseResult.ModuleDependency(moduleId, false));
     }
 
-    private static void parseDependencies(Element element, ModuleParseResult result) {
+    private void parseDependencies(Element element, ModuleParseResult result) {
         final Elements modules = element.getChildElements("module", element.getNamespaceURI());
         final int size = modules.size();
         for (int i = 0; i < size; i ++) {
@@ -101,15 +110,17 @@ public class ModuleParser {
         }
     }
 
-    private static void parseResources(Element element, ModuleParseResult result) {
+    private void parseResources(Element element, ModuleParseResult result) {
         final Elements children = element.getChildElements();
         final int size = children.size();
         for (int i = 0; i < size; i ++) {
             final Element child = children.get(i);
             switch (child.getLocalName()) {
                 case "resource-root": {
-                    String path = child.getAttributeValue("path");
-                    if (path != null) result.resourceRoots.add(path);
+                    final Attribute attribute = child.getAttribute("path");
+                    if (attribute != null) {
+                        result.resourceRoots.add(new ResourceRoot(propertyReplacer.replaceProperties(attribute.getValue()), attribute));
+                    }
                     break;
                 }
                 case "artifact": {
@@ -124,10 +135,10 @@ public class ModuleParser {
         }
     }
 
-    private static ModuleParseResult.ArtifactName parseArtifactName(String artifactName, final Attribute attribute) {
+    private ModuleParseResult.ArtifactName parseArtifactName(String artifactName, final Attribute attribute) {
         final ModuleParseResult.ArtifactName name = parseOptionalArtifactName(artifactName, attribute);
         if (name == null) {
-            return new ModuleParseResult.ArtifactName(artifactName, null, attribute);
+            return new ModuleParseResult.ArtifactName(propertyReplacer.replaceProperties(artifactName), null, attribute);
         }
         return name;
     }

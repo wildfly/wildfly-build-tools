@@ -37,6 +37,7 @@ import org.wildfly.build.provisioning.model.ServerProvisioningDescription;
 import org.wildfly.build.provisioning.model.ServerProvisioningDescriptionModelParser;
 import org.wildfly.build.util.MapPropertyResolver;
 import org.wildfly.build.util.PropertiesBasedArtifactResolver;
+import org.wildfly.build.util.PropertyResolver;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -118,7 +119,9 @@ public class ServerProvisioningMojo extends AbstractMojo {
             properties.putAll(System.getProperties());
             properties.put("project.version", project.getVersion()); //TODO: figure out the correct way to do this
 
-            final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(properties)).parse(configStream);
+            PropertyResolver propertyResolver = new MapPropertyResolver(properties);
+
+            final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(propertyResolver).parse(configStream);
             AetherArtifactFileResolver aetherArtifactFileResolver = new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos);
             ArtifactResolver overrideArtifactResolver = new FeaturePackArtifactResolver(serverProvisioningDescription.getVersionOverrides());
             if(allowMavenVersionOverrides) {
@@ -129,7 +132,7 @@ public class ServerProvisioningMojo extends AbstractMojo {
             }
 
 
-            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), overlay, aetherArtifactFileResolver, overrideArtifactResolver);
+            ServerProvisioner.build(serverProvisioningDescription, new File(buildName, serverName), overlay, propertyResolver, aetherArtifactFileResolver, overrideArtifactResolver);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
