@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.6" name="org.wildfly.build.it-type-classifier-jar">
+    <resources>
+        <artifact name="${org.wildfly.build:it-type-classifier-jar}"/>
+        <artifact name="${org.wildfly.build:it-type-classifier-jar::myclassifier}"/>
+    </resources>
+</module>

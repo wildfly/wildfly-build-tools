@@ -19,6 +19,7 @@ package org.wildfly.build.plugin;
 import org.apache.maven.project.MavenProject;
 import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.pack.model.Artifact;
+import org.wildfly.build.pack.model.Artifact.GACE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,42 +35,18 @@ public class MavenProjectArtifactResolver implements ArtifactResolver {
         this.artifactMap = new HashMap<>();
         for (org.apache.maven.artifact.Artifact mavenProjectArtifact : mavenProject.getArtifacts()) {
             final Artifact artifact = new Artifact(mavenProjectArtifact.getGroupId(), mavenProjectArtifact.getArtifactId(), mavenProjectArtifact.getClassifier(), mavenProjectArtifact.getType(), mavenProjectArtifact.getVersion());
-            StringBuilder sb = new StringBuilder();
-            sb.append(artifact.getGACE().getGroupId());
-            sb.append(':');
-            sb.append(artifact.getGACE().getArtifactId());
-            String extension = artifact.getGACE().getExtension();
-            if (artifact.getGACE().getClassifier() != null && !artifact.getGACE().getClassifier().isEmpty()) {
-                if ( extension == null || extension.equals("jar")) {
-                    artifactMap.put(sb.append("::").append(artifact.getGACE().getClassifier()).toString(), artifact);
-                } else {
-                    artifactMap.put(sb.append(":").append(extension).append(":").append(artifact.getGACE().getClassifier()).toString(), artifact);
-                }
-            } else {
-                if ( extension == null || extension.equals("jar")) {
-                    artifactMap.put(sb.toString(), artifact);
-                } else {
-                    artifactMap.put(sb.append(":").append(extension).toString(), artifact);
-                }
-            }
+            artifactMap.put(artifact.getGACE().toString(), artifact);
         }
     }
 
     @Override
     public Artifact getArtifact(String artifactCoords) {
-        return artifactMap.get(artifactCoords);
+        return artifactMap.get(GACE.canonicalize(artifactCoords));
     }
 
     @Override
-    public Artifact getArtifact(Artifact.GACE GACE) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(GACE.getGroupId());
-        sb.append(':');
-        sb.append(GACE.getArtifactId());
-        if (GACE.getClassifier() != null) {
-            sb.append("::").append(GACE.getClassifier());
-        }
-        return getArtifact(sb.toString());
+    public Artifact getArtifact(GACE GACE) {
+        return artifactMap.get(GACE.toString());
     }
 
 }

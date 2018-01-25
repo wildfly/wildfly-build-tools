@@ -36,8 +36,8 @@ public class Artifact implements Comparable<Artifact> {
             throw new IllegalArgumentException("null gac");
         }
         this.GACE = GACE;
-        if (version == null) {
-            throw new IllegalArgumentException("null version");
+        if (version == null || version.isEmpty()) {
+            throw new IllegalArgumentException("null or empty version");
         }
         this.version = version;
     }
@@ -56,11 +56,14 @@ public class Artifact implements Comparable<Artifact> {
 
     public static Artifact parse(String description) {
         String[] parts = description.split(":");
-        if(parts.length != 3) {
+        switch (parts.length) {
+        case 3:
+            return new Artifact(parts[0], parts[1], null, "jar", parts[2]);
+        case 5:
+            return new Artifact(parts[0], parts[1], parts[3], parts[2], parts[4]);
+        default:
             throw ProvisioningLogger.ROOT_LOGGER.cannotParseArtifact(description);
         }
-        //TODO: do this properly
-        return new Artifact(parts[0], parts[1], null, "jar", parts[2]);
     }
 
     @Override
@@ -94,7 +97,19 @@ public class Artifact implements Comparable<Artifact> {
 
     @Override
     public String toString() {
-        return getGACE().toString() + ':' + version;
+        StringBuilder sb = new StringBuilder(GACE.groupId).append(':').append(GACE.artifactId);
+        if (GACE.extension != null || GACE.classifier != null) {
+            sb.append(':');
+            if (GACE.extension != null) {
+                sb.append(GACE.extension);
+            }
+            sb.append(':');
+            if (GACE.classifier != null) {
+                sb.append(GACE.classifier);
+            }
+        }
+        sb.append(':').append(version);
+        return sb.toString();
     }
 
     public static class GACE implements Comparable<GACE> {
@@ -122,6 +137,25 @@ public class Artifact implements Comparable<Artifact> {
                 this.extension = extension;
             } else {
                 this.extension = null;
+            }
+        }
+
+        public static String canonicalize(String description) {
+            // TODO this can probably be optimized because in most cases the description already is canonical
+            return parse(description).toString();
+        }
+
+        public static GACE parse(String description) {
+            String[] parts = description.split(":");
+            switch (parts.length) {
+            case 2:
+                return new GACE(parts[0], parts[1], null, null);
+            case 3:
+                return new GACE(parts[0], parts[1], null, parts[2]);
+            case 4:
+                return new GACE(parts[0], parts[1], parts[3], parts[2]);
+            default:
+                throw ProvisioningLogger.ROOT_LOGGER.cannotParseArtifact(description);
             }
         }
 
@@ -207,8 +241,16 @@ public class Artifact implements Comparable<Artifact> {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(groupId).append(':').append(artifactId);
-            if (classifier != null) {
-                sb.append("::").append(classifier);
+            if (extension != null) {
+                sb.append(':').append(extension);
+                if (classifier != null) {
+                    sb.append(':').append(classifier);
+                }
+            } else {
+                /* extension == null */
+                if (classifier != null) {
+                    sb.append("::").append(classifier);
+                }
             }
             return sb.toString();
         }
