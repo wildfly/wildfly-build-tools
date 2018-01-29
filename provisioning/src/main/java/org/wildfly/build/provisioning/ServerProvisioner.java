@@ -50,6 +50,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,7 +80,7 @@ public class ServerProvisioner {
 
     private static final String SUBSYSTEM_SCHEMA_TARGET_DIRECTORY = "docs" + File.separator + "schema";
 
-    private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
+    public static final boolean OS_WINDOWS = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
 
     private final ServerProvisioningDescription description;
 
