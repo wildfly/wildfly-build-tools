@@ -90,15 +90,14 @@ public class FeaturePackDescriptionXMLWriter11 {
 
     protected void processArtifact(Artifact artifact, ElementNode versionsElementNode) {
         final ElementNode artifactElementNode = new ElementNode(versionsElementNode, Element.ARTIFACT.getLocalName());
-        final Artifact.GACE GACE = artifact.getGACE();
-        artifactElementNode.addAttribute(Attribute.GROUP_ID.getLocalName(), new AttributeValue(GACE.getGroupId()));
-        artifactElementNode.addAttribute(Attribute.ARTIFACT_ID.getLocalName(), new AttributeValue(GACE.getArtifactId()));
+        artifactElementNode.addAttribute(Attribute.GROUP_ID.getLocalName(), new AttributeValue(artifact.getGroupId()));
+        artifactElementNode.addAttribute(Attribute.ARTIFACT_ID.getLocalName(), new AttributeValue(artifact.getArtifactId()));
         artifactElementNode.addAttribute(Attribute.VERSION.getLocalName(), new AttributeValue(artifact.getVersion()));
-        if (GACE.getClassifier() != null) {
-            artifactElementNode.addAttribute(Attribute.CLASSIFIER.getLocalName(), new AttributeValue(GACE.getClassifier()));
+        if (artifact.getClassifier() != null) {
+            artifactElementNode.addAttribute(Attribute.CLASSIFIER.getLocalName(), new AttributeValue(artifact.getClassifier()));
         }
-        if (GACE.getExtension() != null) {
-            artifactElementNode.addAttribute(Attribute.EXTENSION.getLocalName(), new AttributeValue(GACE.getExtension()));
+        if (artifact.getPackaging() != null) {
+            artifactElementNode.addAttribute(Attribute.EXTENSION.getLocalName(), new AttributeValue(artifact.getPackaging()));
         }
         versionsElementNode.addChild(artifactElementNode);
     }

@@ -101,11 +101,11 @@ public class ServerProvisioningDescriptionXmlWriter implements XMLElementWriter<
 
     protected void processFeaturePack(ServerProvisioningDescription.FeaturePack featurePack, ElementNode parentElementNode) {
         final ElementNode featurePackElementNode = new ElementNode(parentElementNode, Element.FEATURE_PACK.getLocalName());
-        featurePackElementNode.addAttribute(Attribute.GROUP_ID.getLocalName(), new AttributeValue(featurePack.getArtifact().getGACE().getGroupId()));
-        featurePackElementNode.addAttribute(Attribute.ARTIFACT_ID.getLocalName(), new AttributeValue(featurePack.getArtifact().getGACE().getArtifactId()));
+        featurePackElementNode.addAttribute(Attribute.GROUP_ID.getLocalName(), new AttributeValue(featurePack.getArtifact().getGroupId()));
+        featurePackElementNode.addAttribute(Attribute.ARTIFACT_ID.getLocalName(), new AttributeValue(featurePack.getArtifact().getArtifactId()));
         featurePackElementNode.addAttribute(Attribute.VERSION.getLocalName(), new AttributeValue(featurePack.getArtifact().getVersion()));
-        if (featurePack.getArtifact().getGACE().getClassifier() != null) {
-            featurePackElementNode.addAttribute(Attribute.CLASSIFIER.getLocalName(), new AttributeValue(featurePack.getArtifact().getGACE().getClassifier()));
+        if (featurePack.getArtifact().getClassifier() != null) {
+            featurePackElementNode.addAttribute(Attribute.CLASSIFIER.getLocalName(), new AttributeValue(featurePack.getArtifact().getClassifier()));
         }
         processFeaturePackModuleFilters(featurePack, featurePackElementNode);
         processFeaturePackSubsystems(featurePack, featurePackElementNode);
@@ -222,14 +222,14 @@ public class ServerProvisioningDescriptionXmlWriter implements XMLElementWriter<
             final ElementNode versionOverridesElementNode = new ElementNode(parentElementNode, Element.VERSION_OVERRIDES.getLocalName());
             for (Artifact artifact : artifacts) {
                 final ElementNode versionOverrideElementNode = new ElementNode(versionOverridesElementNode, Element.VERSION_OVERRIDE.getLocalName());
-                versionOverrideElementNode.addAttribute(Attribute.GROUP_ID.getLocalName(), new AttributeValue(artifact.getGACE().getGroupId()));
-                versionOverrideElementNode.addAttribute(Attribute.ARTIFACT_ID.getLocalName(), new AttributeValue(artifact.getGACE().getArtifactId()));
+                versionOverrideElementNode.addAttribute(Attribute.GROUP_ID.getLocalName(), new AttributeValue(artifact.getGroupId()));
+                versionOverrideElementNode.addAttribute(Attribute.ARTIFACT_ID.getLocalName(), new AttributeValue(artifact.getArtifactId()));
                 versionOverrideElementNode.addAttribute(Attribute.VERSION.getLocalName(), new AttributeValue(artifact.getVersion()));
-                if (artifact.getGACE().getClassifier() != null) {
-                    versionOverrideElementNode.addAttribute(Attribute.CLASSIFIER.getLocalName(), new AttributeValue(artifact.getGACE().getClassifier()));
+                if (artifact.getClassifier() != null) {
+                    versionOverrideElementNode.addAttribute(Attribute.CLASSIFIER.getLocalName(), new AttributeValue(artifact.getClassifier()));
                 }
-                if (artifact.getGACE().getExtension() != null) {
-                    versionOverrideElementNode.addAttribute(Attribute.EXTENSION.getLocalName(), new AttributeValue(artifact.getGACE().getExtension()));
+                if (artifact.getPackaging() != null) {
+                    versionOverrideElementNode.addAttribute(Attribute.EXTENSION.getLocalName(), new AttributeValue(artifact.getPackaging()));
                 }
                 versionOverridesElementNode.addChild(versionOverrideElementNode);
             }

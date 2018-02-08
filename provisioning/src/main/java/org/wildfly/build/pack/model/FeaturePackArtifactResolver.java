@@ -19,8 +19,8 @@ package org.wildfly.build.pack.model;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.wildfly.build.ArtifactResolver;
-import org.wildfly.build.pack.model.Artifact.GACE;
 
 /**
  * @author Eduardo Martins
@@ -32,17 +32,12 @@ public class FeaturePackArtifactResolver implements ArtifactResolver {
     public FeaturePackArtifactResolver(Collection<Artifact> artifactVersions) {
         this.artifactMap = new HashMap<>();
         for (Artifact artifact : artifactVersions) {
-            artifactMap.put(artifact.getGACE().toString(), artifact);
+            artifactMap.put(artifact.getUnversioned().toString(), artifact);
         }
     }
 
     @Override
-    public Artifact getArtifact(String artifactCoords) {
-        return artifactMap.get(GACE.canonicalize(artifactCoords));
-    }
-
-    @Override
-    public Artifact getArtifact(Artifact.GACE GACE) {
+    public Artifact getArtifact(Artifact GACE) {
         return artifactMap.get(GACE.toString());
     }
 }

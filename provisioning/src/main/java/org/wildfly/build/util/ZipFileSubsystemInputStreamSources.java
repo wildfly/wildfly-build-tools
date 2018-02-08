@@ -111,7 +111,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
         // the subsystem templates are included in module artifacts files
         for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
             // resolve the artifact
-            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifactCoords());
+            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifact());
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve module resource artifact " + artifactName.getArtifactCoords() + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
             }
@@ -139,7 +139,7 @@ public class ZipFileSubsystemInputStreamSources implements SubsystemInputStreamS
         // the subsystem templates are included in module artifacts files
         for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
             // resolve the artifact
-            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifactCoords());
+            Artifact artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifact());
             if (artifact == null) {
                 throw new RuntimeException("Could not resolve module resource artifact " + artifactName.getArtifactCoords() + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
             }

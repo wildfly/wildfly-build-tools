@@ -59,7 +59,7 @@
         <xs:attribute name="groupId" type="xs:string" use="required"/>
         <xs:attribute name="artifactId" type="xs:string" use="required"/>
         <xs:attribute name="classifier" type="xs:string" use="optional"/>
-        <xs:attribute name="extension" type="xs:string" use="optional"/>
+        <xs:attribute name="packaging" type="xs:string" use="optional"/>
         <xs:attribute name="version" type="xs:string" use="required"/>
     </xs:complexType>
 
@@ -102,10 +102,10 @@
     </xs:complexType>
     <xs:complexType name="feature-pack-config-file-subsystem-type">
         <xs:simpleContent>
-            <xs:extension base="xs:string">
+            <xs:packaging base="xs:string">
                 <xs:attribute name="supplement" type="xs:string" use="optional"/>
                 <xs:attribute name="include-if-set" type="xs:string" use="optional"/>
-            </xs:extension>
+            </xs:packaging>
         </xs:simpleContent>
     </xs:complexType>
 
@@ -135,7 +135,7 @@
         <xs:attribute name="groupId" type="xs:string" use="required"/>
         <xs:attribute name="artifactId" type="xs:string" use="required"/>
         <xs:attribute name="classifier" type="xs:string" use="optional"/>
-        <xs:attribute name="extension" type="xs:string" use="optional"/>
+        <xs:attribute name="packaging" type="xs:string" use="optional"/>
         <xs:attribute name="version" type="xs:string" use="required"/>
     </xs:complexType>
 

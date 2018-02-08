@@ -22,8 +22,8 @@ import org.wildfly.build.ArtifactFileResolver;
 import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.Locations;
 import org.wildfly.build.featurepack.model.FeaturePackBuild;
-import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.common.model.CopyArtifact;
+import org.wildfly.build.pack.model.Artifact;
 import org.wildfly.build.pack.model.FeaturePack;
 import org.wildfly.build.pack.model.FeaturePackArtifactResolver;
 import org.wildfly.build.pack.model.FeaturePackDescription;
@@ -76,7 +76,7 @@ public class FeaturePackBuilder {
         //List of errors that were encountered. These will be reported at the end so they are all reported in one go.
         final List<String> errors = new ArrayList<>();
         final Set<ModuleIdentifier> knownModules = new HashSet<>();
-        final Map<Artifact.GACE, String> artifactVersionMap = new HashMap<>();
+        final Map<Artifact, String> artifactVersionMap = new HashMap<>();
         final FeaturePackDescription featurePackDescription = new FeaturePackDescription(build.getDependencies(), build.getConfig(), build.getCopyArtifacts(), build.getFilePermissions());
         try {
             processDependencies(build.getDependencies(), knownModules, new HashSet<String>(), artifactResolver, artifactFileResolver, artifactVersionMap);
@@ -99,34 +99,35 @@ public class FeaturePackBuilder {
         }
     }
 
-    private static void processDependencies(List<String> dependencies, Set<ModuleIdentifier> knownModules, Set<String> featurePacksProcessed, ArtifactResolver buildArtifactResolver, ArtifactFileResolver artifactFileResolver, final Map<Artifact.GACE, String> artifactVersionMap) {
+    private static void processDependencies(List<String> dependencies, Set<ModuleIdentifier> knownModules, Set<String> featurePacksProcessed, ArtifactResolver buildArtifactResolver, ArtifactFileResolver artifactFileResolver, final Map<Artifact, String> artifactVersionMap) {
         for (String dependency : dependencies) {
             if (!featurePacksProcessed.add(dependency)) {
                 continue;
             }
-            Artifact dependencyArtifact = buildArtifactResolver.getArtifact(dependency);
-            if(dependencyArtifact == null) {
-                dependencyArtifact = buildArtifactResolver.getArtifact(dependency + ":zip"); //feature packs should be zip artifacts
+            Artifact artifact = Artifact.parse(dependency);
+            if(artifact.getPackaging() == null) {
+                artifact = new Artifact(artifact.getGroupId(), artifact.getArtifactId(), "zip", artifact.getClassifier(), artifact.getVersion());
             }
+            Artifact dependencyArtifact = buildArtifactResolver.getArtifact(artifact);
             if (dependencyArtifact == null) {
                 throw new RuntimeException("Could not find artifact for " + dependency);
             }
             // load the dependency feature pack
             FeaturePack dependencyFeaturePack = FeaturePackFactory.createPack(dependencyArtifact, artifactFileResolver, new FeaturePackArtifactResolver(Collections.<Artifact>emptyList()));
             // put its artifact to the version map
-            artifactVersionMap.put(dependencyFeaturePack.getArtifact().getGACE(), dependencyFeaturePack.getArtifact().getVersion());
+            artifactVersionMap.put(dependencyFeaturePack.getArtifact().getUnversioned(), dependencyFeaturePack.getArtifact().getVersion());
             // process it
             processDependency(dependencyFeaturePack, knownModules, buildArtifactResolver, artifactVersionMap);
         }
     }
 
-    private static void processDependency(FeaturePack dependencyFeaturePack, Set<ModuleIdentifier> knownModules, ArtifactResolver buildArtifactResolver, Map<Artifact.GACE, String> artifactVersionMap) {
+    private static void processDependency(FeaturePack dependencyFeaturePack, Set<ModuleIdentifier> knownModules, ArtifactResolver buildArtifactResolver, Map<Artifact, String> artifactVersionMap) {
         // the new feature pack may override an artifact version for its dependencies, if that's the case it goes to the version map too
         for (Artifact dependencyVersionArtifact : dependencyFeaturePack.getDescription().getArtifactVersions()) {
-            if (!artifactVersionMap.containsKey(dependencyVersionArtifact.getGACE())) {
-                Artifact artifact = buildArtifactResolver.getArtifact(dependencyVersionArtifact.getGACE());
+            if (!artifactVersionMap.containsKey(dependencyVersionArtifact.getUnversioned())) {
+                Artifact artifact = buildArtifactResolver.getArtifact(dependencyVersionArtifact.getUnversioned());
                 if (artifact != null) {
-                    artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
+                    artifactVersionMap.put(artifact.getUnversioned(), artifact.getVersion());
                 }
             }
         }
@@ -137,7 +138,7 @@ public class FeaturePackBuilder {
         }
     }
 
-    private static void processModulesDirectory(Set<ModuleIdentifier> packProvidedModules, File serverDirectory, final ArtifactResolver artifactResolver, final Map<Artifact.GACE, String> artifactVersionMap,  final List<String> errors) throws IOException {
+    private static void processModulesDirectory(Set<ModuleIdentifier> packProvidedModules, File serverDirectory, final ArtifactResolver artifactResolver, final Map<Artifact, String> artifactVersionMap,  final List<String> errors) throws IOException {
         final Path modulesDir = Paths.get(new File(serverDirectory, Locations.MODULES).getAbsolutePath());
         if (Files.exists(modulesDir)) {
             final HashSet<ModuleIdentifier> knownModules = new HashSet<>(packProvidedModules);
@@ -157,12 +158,12 @@ public class FeaturePackBuilder {
                             if(artifactName.hasVersion()) {
                                 artifact = artifactName.getArtifact();
                             } else {
-                                artifact = artifactResolver.getArtifact(artifactName.getArtifactCoords());
+                                artifact = artifactResolver.getArtifact(artifactName.getArtifact());
                             }
                             if(artifact == null) {
                                 errors.add("Could not determine version for artifact " + artifactName);
                             } else {
-                                artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
+                                artifactVersionMap.put(artifact.getUnversioned(), artifact.getVersion());
                             }
                         }
                         for(ModuleParseResult.ModuleDependency dep : result.getDependencies()) {
@@ -192,20 +193,20 @@ public class FeaturePackBuilder {
         }
     }
 
-    private static void processVersions(FeaturePackDescription featurePackDescription, ArtifactResolver artifactResolver, Map<Artifact.GACE, String> artifactVersionMap) {
+    private static void processVersions(FeaturePackDescription featurePackDescription, ArtifactResolver artifactResolver, Map<Artifact, String> artifactVersionMap) {
         // resolve copy-artifact versions and add to map
         for (CopyArtifact copyArtifact : featurePackDescription.getCopyArtifacts()) {
-            final Artifact artifact = artifactResolver.getArtifact(copyArtifact.getArtifact());
-            if(artifact == null) {
-                throw new RuntimeException("Could not resolve artifact for copy artifact " + copyArtifact.getArtifact());
+            if(copyArtifact.getArtifact().getVersion() == null) {
+                Artifact artifact = copyArtifact.getArtifact(artifactResolver);
+                artifactVersionMap.put(artifact.getUnversioned(), artifact.getVersion());
             }
-            artifactVersionMap.put(artifact.getGACE(), artifact.getVersion());
         }
         // fill feature pack description versions
-        for (Map.Entry<Artifact.GACE, String> mapEntry : artifactVersionMap.entrySet()) {
+        for (Map.Entry<Artifact, String> mapEntry : artifactVersionMap.entrySet()) {
             featurePackDescription.getArtifactVersions().add(new Artifact(mapEntry.getKey(), mapEntry.getValue()));
         }
     }
+
 
     private static void processContentsDirectory(final FeaturePackBuild build, File serverDirectory) throws IOException {
         final File baseDir = new File(serverDirectory, Locations.CONTENT);

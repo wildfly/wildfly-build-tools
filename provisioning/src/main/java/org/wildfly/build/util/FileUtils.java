@@ -91,7 +91,7 @@ public class FileUtils {
     }
 
     public static String readFile(InputStream file) {
-        try (final BufferedInputStream stream = new BufferedInputStream(file)) {
+        try (BufferedInputStream stream = new BufferedInputStream(file)) {
             byte[] buff = new byte[1024];
             StringBuilder builder = new StringBuilder();
             int read = -1;

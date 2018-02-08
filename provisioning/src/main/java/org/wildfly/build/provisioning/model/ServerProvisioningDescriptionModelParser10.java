@@ -519,6 +519,6 @@ class ServerProvisioningDescriptionModelParser10 implements XMLElementReader<Ser
             ParsingUtils.parseNoContent(reader);
         }
 
-        return new Artifact(groupId, artifact, classifier, extension, version);
+        return new Artifact(groupId, artifact, extension, classifier, version);
     }
 }

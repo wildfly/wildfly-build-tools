@@ -320,7 +320,7 @@ class FeaturePackDescriptionXMLParser10 implements XMLElementReader<FeaturePackD
             throw ParsingUtils.missingAttributes(reader.getLocation(), required);
         }
         ParsingUtils.parseNoContent(reader);
-        return new Artifact(groupId, artifactId, classifier, extension, version);
+        return new Artifact(groupId, artifactId, extension, classifier, version);
     }
 
 }

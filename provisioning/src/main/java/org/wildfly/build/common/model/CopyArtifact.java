@@ -18,6 +18,9 @@ package org.wildfly.build.common.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.wildfly.build.ArtifactResolver;
+import org.wildfly.build.pack.model.Artifact;
+
 /**
  * Represents an artifact that is copies into a specific location in the final
  * build.
@@ -27,7 +30,7 @@ import java.util.List;
  */
 public class CopyArtifact {
 
-    private final String artifact;
+    private final Artifact artifact;
     private final String toLocation;
     private final boolean extract;
     private final String fromLocation;
@@ -35,7 +38,7 @@ public class CopyArtifact {
 
 
     public CopyArtifact(String artifact, String toLocation, boolean extract, String fromLocation) {
-        this.artifact = artifact;
+        this.artifact = Artifact.parse(artifact);
         this.toLocation = toLocation;
         this.extract = extract || fromLocation != null;
         if ( fromLocation != null ) {
@@ -46,8 +49,21 @@ public class CopyArtifact {
         this.fromLocation = fromLocation;
     }
 
-    public String getArtifact() {
+    public Artifact getArtifact() {
         return artifact;
+    }
+
+    public Artifact getArtifact(ArtifactResolver resolver) {
+        String version = artifact.getVersion();
+        if (version != null) {
+            return artifact;
+        } else {
+            Artifact artifact = resolver.getArtifact(this.artifact);
+            if(artifact == null) {
+                throw new RuntimeException("Could not resolve artifact for copy artifact " + this.artifact);
+            }
+            return artifact;
+        }
     }
 
     public String getToLocation() {
@@ -82,5 +98,4 @@ public class CopyArtifact {
 
         return null;
     }
-
 }

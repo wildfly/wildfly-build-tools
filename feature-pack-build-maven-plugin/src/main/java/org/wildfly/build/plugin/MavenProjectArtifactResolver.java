@@ -19,7 +19,6 @@ package org.wildfly.build.plugin;
 import org.apache.maven.project.MavenProject;
 import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.pack.model.Artifact;
-import org.wildfly.build.pack.model.Artifact.GACE;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,18 +33,12 @@ public class MavenProjectArtifactResolver implements ArtifactResolver {
     public MavenProjectArtifactResolver(MavenProject mavenProject) {
         this.artifactMap = new HashMap<>();
         for (org.apache.maven.artifact.Artifact mavenProjectArtifact : mavenProject.getArtifacts()) {
-            final Artifact artifact = new Artifact(mavenProjectArtifact.getGroupId(), mavenProjectArtifact.getArtifactId(), mavenProjectArtifact.getClassifier(), mavenProjectArtifact.getType(), mavenProjectArtifact.getVersion());
-            artifactMap.put(artifact.getGACE().toString(), artifact);
+            final Artifact artifact = new Artifact(mavenProjectArtifact.getGroupId(), mavenProjectArtifact.getArtifactId(), mavenProjectArtifact.getType(), mavenProjectArtifact.getClassifier(), mavenProjectArtifact.getVersion());
+            artifactMap.put(new Artifact(artifact, null).toString(), artifact);
         }
     }
-
     @Override
-    public Artifact getArtifact(String artifactCoords) {
-        return artifactMap.get(GACE.canonicalize(artifactCoords));
-    }
-
-    @Override
-    public Artifact getArtifact(GACE GACE) {
+    public Artifact getArtifact(Artifact GACE) {
         return artifactMap.get(GACE.toString());
     }
 

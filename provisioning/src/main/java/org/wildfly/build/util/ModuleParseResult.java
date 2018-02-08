@@ -121,26 +121,11 @@ public class ModuleParseResult {
         }
 
         public boolean hasVersion() {
-            String[] parts = artifactCoords.split(":");
-            if(parts.length > 2) {
-                String version = parts[2];
-                if(version != null && !version.isEmpty()) {
-                    return true;
-                }
-            }
-            return false;
+            return getArtifact().getVersion() != null;
         }
 
         public Artifact getArtifact() {
-            if(!hasVersion()) {
-                throw new IllegalStateException("can only be called when version is hard coded");
-            }
-            String[] parts = getArtifactCoords().split(":");
-            if(parts.length == 3) {
-                return new Artifact(parts[0], parts[1], null, "jar", parts[2]);
-            } else {
-                return new Artifact(parts[0], parts[1], parts[3], "jar", parts[2]);
-            }
+            return Artifact.parse(getArtifactCoords());
         }
     }
 }

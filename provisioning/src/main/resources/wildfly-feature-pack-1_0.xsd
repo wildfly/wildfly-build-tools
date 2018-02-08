@@ -52,7 +52,7 @@
         <xs:attribute name="groupId" use="required" type="xs:string"/>
         <xs:attribute name="artifactId" use="required" type="xs:string"/>
         <xs:attribute name="classifier" type="xs:string"/>
-        <xs:attribute name="extension" type="xs:string"/>
+        <xs:attribute name="packaging" type="xs:string"/>
         <xs:attribute name="version" use="required" type="xs:string"/>
     </xs:complexType>
 

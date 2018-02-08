@@ -32,13 +32,9 @@ public class ModuleArtifactPropertyResolver implements PropertyResolver {
 
     @Override
     public String resolveProperty(String property) {
-        Artifact artifact = artifactResolver.getArtifact(property);
+        Artifact artifact = artifactResolver.getArtifact(Artifact.parse(property));
         if (artifact != null) {
-            final StringBuilder sb = new StringBuilder(artifact.getGACE().getGroupId()).append(':').append(artifact.getGACE().getArtifactId()).append(':').append(artifact.getVersion());
-            if (artifact.getGACE().getClassifier() != null) {
-                sb.append(':').append(artifact.getGACE().getClassifier());
-            }
-            return sb.toString();
+            return artifact.toJBossModulesString();
         } else {
             return null;
         }

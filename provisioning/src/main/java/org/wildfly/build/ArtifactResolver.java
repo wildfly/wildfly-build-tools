@@ -19,22 +19,17 @@ package org.wildfly.build;
 import org.wildfly.build.pack.model.Artifact;
 
 /**
+ * Resolver that returns a new artifact with the same coordinates but with the version defined.
+ *
  * @author Eduardo Martins
  */
 public interface ArtifactResolver {
 
     /**
-     * @param coords The artifact coordinates in the format
-     *            {@code <groupId>:<artifactId>[::<classifier>]}, must not be {@code null}.
-     * @return
-     */
-    Artifact getArtifact(String coords);
-
-    /**
      *
-     * @param GACE
-     * @return
+     * @param unversioned
+     * @return A new artifact with the version defined, or null if the version cannot be determined
      */
-    Artifact getArtifact(Artifact.GACE GACE);
+    Artifact getArtifact(Artifact unversioned);
 
 }

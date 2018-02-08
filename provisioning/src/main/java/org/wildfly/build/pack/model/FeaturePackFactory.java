@@ -85,7 +85,7 @@ public class FeaturePackFactory {
                     contentFiles.add(entryName);
                 }
             }
-            // create description
+            // create descriptionAr
             final FeaturePackDescription description = createFeaturePackDescription(jar);
             // create feature pack artifact resolver
             final FeaturePackArtifactResolver featurePackArtifactResolver = new FeaturePackArtifactResolver(description.getArtifactVersions());
@@ -93,10 +93,11 @@ public class FeaturePackFactory {
             // create dependencies feature packs
             final List<FeaturePack> dependencies = new ArrayList<>();
             for (String dependency : description.getDependencies()) {
-                Artifact dependencyArtifact = artifactResolver.getArtifact(dependency);
-                if(dependencyArtifact == null) {
-                    dependencyArtifact = artifactResolver.getArtifact(dependency + ":zip"); //feature packs should be zip artifacts
+                Artifact artifact = Artifact.parse(dependency);
+                if(artifact.getPackaging() == null) {
+                    artifact = new Artifact(artifact.getGroupId(), artifact.getArtifactId(), "zip", artifact.getClassifier(), artifact.getVersion());
                 }
+                Artifact dependencyArtifact = artifactResolver.getArtifact(artifact);
                 dependencies.add(createPack(dependencyArtifact, artifactFileResolver, versionOverrideResolver, new HashSet<>(processedFeaturePacks)));
             }
             return new FeaturePack(artifactFile, artifactCoords, description, dependencies, artifactResolver, configurationFiles, modulesFiles, contentFiles);

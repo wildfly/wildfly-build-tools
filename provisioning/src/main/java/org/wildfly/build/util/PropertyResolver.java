@@ -23,7 +23,7 @@ package org.wildfly.build.util;
  */
 public interface PropertyResolver {
 
-    String resolveProperty(final String property);
+    String resolveProperty(String property);
 
     PropertyResolver NO_OP = new PropertyResolver() {
         @Override

@@ -53,7 +53,7 @@ public class CopyArtifactsXMLWriter10 {
                 FileFilterXMLWriter10.INSTANCE.write(fileFilter, copyArtifactElementNode);
             }
         }
-        copyArtifactElementNode.addAttribute(Attribute.ARTIFACT.getLocalName(), new AttributeValue(copyArtifact.getArtifact()));
+        copyArtifactElementNode.addAttribute(Attribute.ARTIFACT.getLocalName(), new AttributeValue(copyArtifact.getArtifact().toString()));
         copyArtifactElementNode.addAttribute(Attribute.TO_LOCATION.getLocalName(), new AttributeValue(copyArtifact.getToLocation()));
         if (copyArtifact.isExtract()) {
             copyArtifactElementNode.addAttribute(Attribute.EXTRACT.getLocalName(), new AttributeValue(Boolean.toString(copyArtifact.isExtract())));

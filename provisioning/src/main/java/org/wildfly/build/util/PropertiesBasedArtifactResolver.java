@@ -18,7 +18,6 @@ package org.wildfly.build.util;
 
 import org.wildfly.build.ArtifactResolver;
 import org.wildfly.build.pack.model.Artifact;
-import org.wildfly.build.pack.model.Artifact.GACE;
 
 import java.util.Properties;
 
@@ -35,18 +34,12 @@ public class PropertiesBasedArtifactResolver implements ArtifactResolver {
         this.properties = properties;
     }
 
-
     @Override
-    public Artifact getArtifact(String coords) {
-        return getArtifact(GACE.parse(coords));
-    }
-
-    @Override
-    public Artifact getArtifact(Artifact.GACE GACE) {
-        String version = (String) properties.get("version." + GACE.toString());
+    public Artifact getArtifact(Artifact artifact) {
+        String version = (String) properties.get("version." + artifact.toString());
         if(version == null) {
             return null;
         }
-        return new Artifact(GACE, version);
+        return new Artifact(artifact, version);
     }
 }

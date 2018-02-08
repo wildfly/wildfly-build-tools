@@ -173,10 +173,7 @@ public class ServerProvisioner {
         for (CopyArtifact copyArtifact : copyArtifacts) {
 
             //first resolve the artifact
-            Artifact artifact = artifactResolver.getArtifact(copyArtifact.getArtifact());
-            if (artifact == null) {
-                throw new RuntimeException("Could not resolve artifact " + copyArtifact.getArtifact() + " to copy");
-            }
+            Artifact artifact = copyArtifact.getArtifact(artifactResolver);
             File artifactFile = artifactFileResolver.getArtifactFile(artifact);
             if (artifactFile == null) {
                 throw new RuntimeException("Could not resolve file for artifact " + copyArtifact.getArtifact() + " to copy");
@@ -212,7 +209,7 @@ public class ServerProvisioner {
 
     private void extractSchema(File schemaOutputDirectory, Artifact artifact, File artifactFile) throws IOException {
         if (description.isExtractSchemas() && schemaOutputDirectory != null) {
-            String groupId = artifact.getGACE().getGroupId();
+            String groupId = artifact.getGroupId();
             // extract schemas, if any
             if (description.getExtractSchemasGroups().contains(groupId)) {
                 logger.debugf("extracting schemas for artifact: '%s'", artifact);
@@ -245,13 +242,12 @@ public class ServerProvisioner {
             //we always need to resolve all subsystem templates, regardless of the value of exclude-dependencies
             for (FeaturePack.Module module : provisioningFeaturePack.getModules(artifactFileResolver, false).values()) {
                 for (ModuleParseResult.ArtifactName artifactName : module.getModuleParseResult().getArtifacts()) {
-                    String artifactCoords = artifactName.getArtifactCoords();
                     String options = artifactName.getOptions();
                     Artifact artifact;
                     if(artifactName.hasVersion()) {
                         artifact = artifactName.getArtifact();
                     } else {
-                        artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactCoords);
+                        artifact = module.getFeaturePack().getArtifactResolver().getArtifact(artifactName.getArtifact());
                     }
                     if (artifact == null) {
                         throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + module.getFeaturePack().getFeaturePackFile());
@@ -289,7 +285,6 @@ public class ServerProvisioner {
                 ModuleParseResult result = module.getModuleParseResult();
                 // process module artifacts
                 for (ModuleParseResult.ArtifactName artifactName : result.getArtifacts()) {
-                    String artifactCoords = artifactName.getArtifactCoords();
                     String options = artifactName.getOptions();
                     boolean jandex = false;
                     if (options != null) {
@@ -299,7 +294,7 @@ public class ServerProvisioner {
                     if(artifactName.hasVersion()) {
                         artifact = artifactName.getArtifact();
                     } else {
-                        artifact = featurePack.getArtifactResolver().getArtifact(artifactCoords);
+                        artifact = featurePack.getArtifactResolver().getArtifact(artifactName.getArtifact());
                     }
                     if (artifact == null) {
                         throw new RuntimeException("Could not resolve module resource artifact " + artifactName + " for feature pack " + featurePack.getFeaturePackFile());
@@ -349,7 +344,7 @@ public class ServerProvisioner {
                 // update the version, if there is one
                 final ModuleParseResult.ArtifactName versionArtifactName = result.getVersionArtifactName();
                 if (versionArtifactName != null) {
-                    Artifact artifact = featurePack.getArtifactResolver().getArtifact(versionArtifactName.getArtifactCoords());
+                    Artifact artifact = featurePack.getArtifactResolver().getArtifact(versionArtifactName.getArtifact());
                     if (artifact == null) {
                         throw new RuntimeException("Could not resolve module resource artifact " + versionArtifactName + " for feature pack " + featurePack.getFeaturePackFile());
                     }
