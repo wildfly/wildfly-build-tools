@@ -155,14 +155,16 @@ public class FeaturePackBuilder {
                         for (ModuleParseResult.ArtifactName artifactName : result.getArtifacts()) {
 
                             Artifact artifact;
+                            boolean include = true;
                             if(artifactName.hasVersion()) {
+                                include = false;
                                 artifact = artifactName.getArtifact();
                             } else {
                                 artifact = artifactResolver.getArtifact(artifactName.getArtifact());
                             }
                             if(artifact == null) {
                                 errors.add("Could not determine version for artifact " + artifactName);
-                            } else {
+                            } else if(include) {
                                 artifactVersionMap.put(artifact.getUnversioned(), artifact.getVersion());
                             }
                         }

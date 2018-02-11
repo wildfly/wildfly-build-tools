@@ -111,6 +111,21 @@ public class ModuleParseResult {
             return attribute;
         }
 
+        public String getJBossModulesArtifactString() {
+            Artifact artifact = getArtifact();
+            if(artifact.getVersion() == null) {
+                throw new IllegalStateException("getJBossModulesArtifactString can only be called for versioned artifacts");
+            }
+            if(artifact.getPackaging() != null) {
+                throw new IllegalStateException("getJBossModulesArtifactString can only be called for jar artifacts");
+            }
+            if(artifact.getClassifier() == null) {
+                return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion();
+            } else {
+                return artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion() + ":" + artifact.getClassifier();
+            }
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(artifactCoords);

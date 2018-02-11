@@ -306,9 +306,13 @@ public class ServerProvisioner {
                             if(orig.contains("?")) {
                                 orig = orig.substring(0, orig.indexOf("?")) + "}";
                             }
-                            String repl = buildPropertyReplacer.replaceProperties(orig);
-                            if (! repl.equals(orig)) {
-                                artifactName.getAttribute().setValue(repl);
+                            if(!artifactName.hasVersion()) {
+                                String repl = buildPropertyReplacer.replaceProperties(orig);
+                                if (! repl.equals(orig)) {
+                                    artifactName.getAttribute().setValue(repl);
+                                }
+                            } else {
+                                artifactName.getAttribute().setValue(artifactName.getJBossModulesArtifactString());
                             }
                             File artifactFile = artifactFileResolver.getArtifactFile(artifact);
                             // extract schemas if needed
