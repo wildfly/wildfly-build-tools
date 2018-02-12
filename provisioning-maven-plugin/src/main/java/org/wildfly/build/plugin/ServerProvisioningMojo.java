@@ -117,6 +117,9 @@ public class ServerProvisioningMojo extends AbstractMojo {
             properties.putAll(project.getProperties());
             properties.putAll(System.getProperties());
             properties.put("project.version", project.getVersion()); //TODO: figure out the correct way to do this
+            properties.put("project.groupId", project.getGroupId());
+            properties.put("project.artifactId", project.getArtifactId());
+            properties.put("project.packaging", project.getPackaging());
 
             final ServerProvisioningDescription serverProvisioningDescription = new ServerProvisioningDescriptionModelParser(new MapPropertyResolver(properties)).parse(configStream);
             AetherArtifactFileResolver aetherArtifactFileResolver = new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos);
