@@ -28,6 +28,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -38,6 +40,11 @@ import java.nio.file.Path;
  * @since 06-Sep-2012
  */
 public class ModuleParser {
+
+    /**
+     * pattern for artifacts in the JBoss Modules format
+     */
+    private static final Pattern JBOSS_MODULES_VALID_PATTERN = Pattern.compile("^([-_a-zA-Z0-9.]+):([-_a-zA-Z0-9.]+):([-_a-zA-Z0-9.]+)(?::([-_a-zA-Z0-9.]+))?$");
 
     public static ModuleParseResult parse(Path inputFile) throws IOException, ParsingException {
         return parse(new BufferedInputStream(new FileInputStream(inputFile.toFile())));
@@ -127,6 +134,24 @@ public class ModuleParser {
     private static ModuleParseResult.ArtifactName parseArtifactName(String artifactName, final Attribute attribute) {
         final ModuleParseResult.ArtifactName name = parseOptionalArtifactName(artifactName, attribute);
         if (name == null) {
+            //this happens if the artifact is not enclosed in a ${} match
+            //we still support this, as long as a hard coded version is present
+            //we initially try and match the jboss-modules fromat, of G:A:V[:Q]
+            //if this does not match we use the standard format used elsewhere of G:A:[:P[:Q[:V]]]
+            final Matcher matcher = JBOSS_MODULES_VALID_PATTERN.matcher(artifactName);
+            if (matcher.matches()) {
+                StringBuilder sb = new StringBuilder();
+                sb.append(matcher.group(1)) //group
+                    .append(":")
+                    .append(matcher.group(2)) //artifact
+                    .append("::"); //packaging is always null (jar)
+                if (matcher.group(4) != null) {
+                    //there is a classifier present
+                    sb.append(matcher.group(4));
+                }
+                sb.append(":").append(matcher.group(3));
+                return new ModuleParseResult.ArtifactName(sb.toString(), null, attribute);
+            }
             return new ModuleParseResult.ArtifactName(artifactName, null, attribute);
         }
         return name;
