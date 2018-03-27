@@ -16,6 +16,7 @@
 
 package org.wildfly.build.plugin;
 
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -25,6 +26,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.filtering.MavenFilteringException;
+import org.apache.maven.shared.filtering.MavenResourcesExecution;
+import org.apache.maven.shared.filtering.MavenResourcesFiltering;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -45,6 +49,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -55,6 +61,7 @@ import java.util.Properties;
  * @author Eduardo Martins
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings("InstanceVariableMayNotBeInitialized")
 @Mojo(name = "build", requiresDependencyResolution = ResolutionScope.RUNTIME, defaultPhase = LifecyclePhase.COMPILE)
 public class FeaturePackBuildMojo extends AbstractMojo {
     private static final boolean OS_WINDOWS = System.getProperty("os.name").contains("indows");
@@ -94,6 +101,13 @@ public class FeaturePackBuildMojo extends AbstractMojo {
     private String buildName;
 
     /**
+     * Allows for additional resources or resources to be processed in a different manor. For example resources can be
+     * {@linkplain Resource#isFiltering() filtered}.
+     */
+    @Parameter
+    private List<Resource> resources;
+
+    /**
      * The entry point to Aether, i.e. the component doing all the work.
      */
     @Component
@@ -110,6 +124,12 @@ public class FeaturePackBuildMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
     private List<RemoteRepository> remoteRepos;
+
+    @Parameter( defaultValue = "${session}", readonly = true )
+    private MavenSession session;
+
+    @Component( role = MavenResourcesFiltering.class, hint = "default" )
+    private MavenResourcesFiltering mavenResourcesFiltering;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -136,6 +156,16 @@ public class FeaturePackBuildMojo extends AbstractMojo {
             FeaturePackBuilder.build(build, target, new MavenProjectArtifactResolver(project), new AetherArtifactFileResolver(repoSystem, repoSession, remoteRepos));
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+
+        // Process additional resources
+        if (resources != null) {
+            try {
+                processResources(getOverwriteResources(),true);
+                processResources(getNonOverwriteResources(), false);
+            } catch (MavenFilteringException e) {
+                throw new MojoExecutionException("Failed to process resources.", e);
+            }
         }
     }
 
@@ -201,6 +231,36 @@ public class FeaturePackBuildMojo extends AbstractMojo {
                 return FileVisitResult.CONTINUE;
             }
         });
+    }
+
+    private void processResources(final List<org.apache.maven.model.Resource> resources, final boolean overwrite) throws MavenFilteringException {
+        final MavenResourcesExecution resourcesExecution = new MavenResourcesExecution(resources, new File(buildName, serverName),
+                project, "UTF-8", Collections.emptyList(), Collections.emptyList(), session);
+        resourcesExecution.setIncludeEmptyDirs(false);
+        resourcesExecution.setEscapeWindowsPaths(true);
+        resourcesExecution.setOverwrite(overwrite);
+        resourcesExecution.setAddDefaultExcludes(true);
+        mavenResourcesFiltering.filterResources(resourcesExecution);
+    }
+
+    private List<org.apache.maven.model.Resource> getOverwriteResources() {
+        final List<org.apache.maven.model.Resource> result = new ArrayList<>();
+        for (Resource resource : resources) {
+            if (resource.isOverwrite()) {
+                result.add(resource);
+            }
+        }
+        return result;
+    }
+
+    private List<org.apache.maven.model.Resource> getNonOverwriteResources() {
+        final List<org.apache.maven.model.Resource> result = new ArrayList<>();
+        for (Resource resource : resources) {
+            if (!resource.isOverwrite()) {
+                result.add(resource);
+            }
+        }
+        return result;
     }
 
 }
