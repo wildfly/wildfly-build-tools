@@ -103,9 +103,9 @@ https://github.com/wildfly/wildfly-build-tools/tree/master/provisioning/src/main
 Some example configurations can be found in the wildfly-core and wildfly sources:
 
 * https://github.com/wildfly/wildfly-core/blob/master/core-feature-pack/feature-pack-build.xml
-* https://github.com/wildfly/wildfly-core/blob/master/dist/server-provisioning.xml
+* https://github.com/wildfly/wildfly-core/blob/master/dist-legacy/server-provisioning.xml
 * https://github.com/wildfly/wildfly/blob/master/feature-pack/feature-pack-build.xml
-* https://github.com/wildfly/wildfly/blob/master/dist/server-provisioning.xml
+* https://github.com/wildfly/wildfly/blob/master/dist-legacy/server-provisioning.xml
 
 #### Provisioning configuration attributes
 * *copy-module-artifacts* - whether should be WildFly modules resources (JARs) copied from artifacts into `WILDFLY_HOME/modules`, next to their `module.xml`.
