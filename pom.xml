@@ -73,7 +73,7 @@
         <version.org.codehaus.plexus.plexus-utils>3.0.24</version.org.codehaus.plexus.plexus-utils>
         <version.org.eclipse.aether>1.1.0</version.org.eclipse.aether>
         <version.org.jboss.jandex>2.0.3.Final</version.org.jboss.jandex>
-        <version.org.jboss.logging>3.3.0.Final</version.org.jboss.logging>
+        <version.org.jboss.logging>3.4.0.Final</version.org.jboss.logging>
         <version.org.jboss.logging.processor>2.0.1.Final</version.org.jboss.logging.processor>
         <version.org.jboss.logmanager>2.0.4.Final</version.org.jboss.logmanager>
         <version.org.codehaus.woodstox.stax2-api>3.1.4</version.org.codehaus.woodstox.stax2-api>
