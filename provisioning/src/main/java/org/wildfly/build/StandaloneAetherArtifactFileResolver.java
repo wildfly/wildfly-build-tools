@@ -119,8 +119,8 @@ public class StandaloneAetherArtifactFileResolver extends AetherArtifactFileReso
      */
     public static List<RemoteRepository> getStandardRemoteRepositories() {
         final List<RemoteRepository> remoteRepositories = new ArrayList<>();
-        remoteRepositories.add(new RemoteRepository.Builder("central","default","http://central.maven.org/maven2/").build());
-        remoteRepositories.add(new RemoteRepository.Builder("jboss-community-repository", "default", "http://repository.jboss.org/nexus/content/groups/public/").build());
+        remoteRepositories.add(new RemoteRepository.Builder("central","default","https://central.maven.org/maven2/").build());
+        remoteRepositories.add(new RemoteRepository.Builder("jboss-community-repository", "default", "https://repository.jboss.org/nexus/content/groups/public/").build());
         return remoteRepositories;
     }
 }
