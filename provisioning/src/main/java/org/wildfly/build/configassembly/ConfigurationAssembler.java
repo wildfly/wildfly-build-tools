@@ -105,7 +105,7 @@ public class ConfigurationAssembler {
         final Set<String> extensions = new TreeSet<String>();
         final Map<String, Map<String, ElementNode>> socketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
         final Map<String, Map<String, ElementNode>> outboundSocketBindingsByGroup = new HashMap<String, Map<String, ElementNode>>();
-        final Map<String, ElementNode> interfaces = new TreeMap<String, ElementNode>();
+        final Map<String, ElementNode> interfaces = new TreeMap<>();
         for (Map.Entry<String, ProcessingInstructionNode> subsystemEntry : templateParser.getSubsystemPlaceholders().entrySet()) {
             final String profileName = subsystemEntry.getKey();
             final String groupName = subsystemEntry.getValue().getDataValue("socket-binding-group", "");
@@ -168,6 +168,24 @@ public class ConfigurationAssembler {
             }
         }
         if (socketBindingsByGroup.size() > 0 && outboundSocketBindingsByGroup.size() > 0) {
+
+            // Store [outbound-]socket-binding children from the template so they are sorted with those added by the subsystems
+            ElementNode socketGroupsParent = findElementNode(templateParser.getRootNode(), "socket-binding-groups", false);
+            if (socketGroupsParent != null) {
+                for (Iterator<Node> it = socketGroupsParent.iterateChildren(); it.hasNext(); ) {
+                    Node node = it.next();
+                    if (node instanceof ElementNode) {
+                        ElementNode groupNode = (ElementNode) node;
+                        integrateTemplateBindings(templateParser, socketBindingsByGroup, outboundSocketBindingsByGroup, groupNode);
+                    }
+                }
+            } else {
+                ElementNode groupNode = findElementNode(templateParser.getRootNode(), "socket-binding-group", false);
+                if (groupNode != null) {
+                    integrateTemplateBindings(templateParser, socketBindingsByGroup, outboundSocketBindingsByGroup, groupNode);
+                }
+            }
+
             for (Map.Entry<String, ProcessingInstructionNode> entry : templateParser.getSocketBindingsPlaceHolders().entrySet()) {
                 Map<String, ElementNode> socketBindings = socketBindingsByGroup.get(entry.getKey());
                 if (socketBindings == null) {
@@ -192,10 +210,63 @@ public class ConfigurationAssembler {
             }
         }
         if (interfaces.size() > 0) {
+            // Store interface children from the template so they are sorted with those added by the subsystems
+            ElementNode interfacesParent = findElementNode(templateParser.getRootNode(), "interfaces", true);
+            assert interfacesParent != null;
+            for (Iterator<Node> it = interfacesParent.iterateChildren(); it.hasNext() ; ) {
+                Node node = it.next();
+                if (node instanceof ElementNode) {
+                    ElementNode elementNode = (ElementNode) node;
+                    interfaces.putIfAbsent(elementNode.getAttributeValue("name"), elementNode);
+                    it.remove();
+                }
+            }
             final ProcessingInstructionNode interfacesNode = templateParser.getInterfacesPlaceHolders();
             for (ElementNode interfaceElement : interfaces.values()) {
                 interfacesNode.addDelegate(interfaceElement);
             }
         }
+    }
+
+    private void integrateTemplateBindings(TemplateParser templateParser, Map<String, Map<String, ElementNode>> socketBindingsByGroup, Map<String, Map<String, ElementNode>> outboundSocketBindingsByGroup, ElementNode groupNode) {
+        String groupName = groupNode.getAttributeValue("name");
+        if (templateParser.getSocketBindingsPlaceHolders().containsKey(groupName)) {
+
+            // We have processing instructions for this group, so we want to mix in any bindings
+            // direct added from the template
+
+            Map<String, ElementNode> inboundMap = socketBindingsByGroup.get(groupName);
+            Map<String, ElementNode> outboundMap = outboundSocketBindingsByGroup.get(groupName);
+
+            for (Iterator<Node> groupit = groupNode.iterateChildren(); groupit.hasNext(); ) {
+                Node bnode = groupit.next();
+                if (bnode instanceof ElementNode) {
+                    ElementNode bindingNode = (ElementNode) bnode;
+                    if (inboundMap != null && bindingNode.getName().equals("socket-binding")) {
+                        inboundMap.putIfAbsent(bindingNode.getAttributeValue("name"), bindingNode);
+                        groupit.remove();
+                    } else if (outboundMap != null && bindingNode.getName().equals("outbound-socket-binding")) {
+                        outboundMap.putIfAbsent(bindingNode.getAttributeValue("name"), bindingNode);
+                        groupit.remove();
+                    }
+                }
+            }
+        }
+    }
+
+    private static ElementNode findElementNode(ElementNode parent, String name, boolean required) {
+        for (Iterator<Node> it = parent.iterateChildren() ; it.hasNext() ; ) {
+            Node node = it.next();
+            if (node instanceof ElementNode) {
+                ElementNode elementNode = (ElementNode)node;
+                if (elementNode.getName().equals(name)) {
+                    return elementNode;
+                }
+            }
+        }
+        if (required) {
+            throw new IllegalStateException("Node " + parent.getName() + " has no children named " + name);
+        }
+        return null;
     }
 }
