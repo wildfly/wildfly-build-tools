@@ -63,7 +63,7 @@
         <version.plugin.plugin>3.5</version.plugin.plugin>
         <!-- end overrides  -->
 
-        <version.junit>4.12</version.junit>
+        <version.junit>4.13.1</version.junit>
 
         <version.org.apache.maven.maven-core>3.2.5</version.org.apache.maven.maven-core>
         <version.org.apache.maven.maven-filtering>3.1.1</version.org.apache.maven.maven-filtering>
