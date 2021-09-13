@@ -1,6 +1,8 @@
 WildFly Build Tools
 ========================
 
+:warning: This project has been archived. To provision WildFly you should use [Galleon](https://docs.wildfly.org/galleon/) for provisioning.
+
 This project contains Maven plugins and related tools which are used for
 building WildFly.  The **feature-pack-maven-plugin** is used to create
 a lightweight artifact that contains a complete description of a set of 
